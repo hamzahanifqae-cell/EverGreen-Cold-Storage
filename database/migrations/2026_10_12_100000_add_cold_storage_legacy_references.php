@@ -22,8 +22,12 @@ return new class extends Migration
             });
         }
 
+        // MySQL caps identifiers at 64 chars — the auto-generated composite
+        // index name for this table exceeds that, so use an explicit short name.
+        $legacyRefsMerchantCustomerIndex = 'cs_cust_legacy_refs_merch_cust_idx';
+
         if (! Schema::hasTable('cold_storage_customer_legacy_references')) {
-            Schema::create('cold_storage_customer_legacy_references', function (Blueprint $table) {
+            Schema::create('cold_storage_customer_legacy_references', function (Blueprint $table) use ($legacyRefsMerchantCustomerIndex) {
                 $table->uuid('id')->primary();
                 $table->foreignUuid('merchant_id')->constrained()->cascadeOnDelete();
                 $table->foreignUuid('customer_id')->constrained('customers')->cascadeOnDelete();
@@ -34,7 +38,11 @@ return new class extends Migration
                 $table->foreignUuid('created_by')->nullable()->constrained('users')->nullOnDelete();
                 $table->timestamps();
 
-                $table->index(['merchant_id', 'customer_id']);
+                $table->index(['merchant_id', 'customer_id'], $legacyRefsMerchantCustomerIndex);
+            });
+        } elseif (! $this->hasIndex('cold_storage_customer_legacy_references', $legacyRefsMerchantCustomerIndex)) {
+            Schema::table('cold_storage_customer_legacy_references', function (Blueprint $table) use ($legacyRefsMerchantCustomerIndex) {
+                $table->index(['merchant_id', 'customer_id'], $legacyRefsMerchantCustomerIndex);
             });
         }
 
