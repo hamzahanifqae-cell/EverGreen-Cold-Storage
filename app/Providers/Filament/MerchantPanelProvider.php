@@ -8,6 +8,7 @@ use App\Filament\Pages\EditProfile;
 use App\Http\Middleware\DemoSessionTimeout;
 use App\Http\Middleware\EnsureStaffIsVerified;
 use App\Http\Middleware\SetPanelAuthDefaults;
+use App\Support\DomainConfig;
 use Filament\Actions\Action;
 use Filament\Enums\ThemeMode;
 use Filament\Facades\Filament;
@@ -31,7 +32,7 @@ class MerchantPanelProvider extends PanelProvider
     public function panel(Panel $panel): Panel
     {
 
-        return $panel
+        $panel = $panel
             ->id('merchant')
             ->path('merchant')
             ->authGuard('merchant')
@@ -159,5 +160,10 @@ class MerchantPanelProvider extends PanelProvider
 
             ->globalSearch(false);
 
+        if ($appHost = DomainConfig::appHost()) {
+            $panel->domain($appHost);
+        }
+
+        return $panel;
     }
 }

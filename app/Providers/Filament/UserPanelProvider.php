@@ -6,6 +6,7 @@ use App\Filament\Auth\Login;
 use App\Filament\Pages\Dashboard;
 use App\Http\Middleware\EnsureStaffIsVerified;
 use App\Http\Middleware\SetPanelAuthDefaults;
+use App\Support\DomainConfig;
 use Filament\Enums\ThemeMode;
 use Filament\Facades\Filament;
 use Filament\Http\Middleware\Authenticate;
@@ -27,7 +28,7 @@ class UserPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panel = $panel
             ->id('user')
             ->path('staff')
             ->authGuard('staff')
@@ -125,5 +126,11 @@ class UserPanelProvider extends PanelProvider
             )
 
             ->globalSearch(false);
+
+        if ($appHost = DomainConfig::appHost()) {
+            $panel->domain($appHost);
+        }
+
+        return $panel;
     }
 }

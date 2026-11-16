@@ -1,10 +1,25 @@
 ---
 deployment:
   tasks:
-    - /bin/tar --exclude='.git' --exclude='.env' --exclude='storage' --exclude='node_modules' --exclude='.github' --exclude='public/hot' -cf - . | (cd /home/techshakerco99/public_html/flowdeskpos.com && /bin/tar -xf -)
-    - /opt/cpanel/ea-php84/root/usr/bin/php /home/techshakerco99/public_html/flowdeskpos.com/artisan migrate --force
-    - /opt/cpanel/ea-php84/root/usr/bin/php /home/techshakerco99/public_html/flowdeskpos.com/artisan storage:link 2>/dev/null || true
-    - /opt/cpanel/ea-php84/root/usr/bin/php /home/techshakerco99/public_html/flowdeskpos.com/artisan optimize:clear
-    - /opt/cpanel/ea-php84/root/usr/bin/php /home/techshakerco99/public_html/flowdeskpos.com/artisan config:cache
-    - /opt/cpanel/ea-php84/root/usr/bin/php /home/techshakerco99/public_html/flowdeskpos.com/artisan route:cache
-    - /opt/cpanel/ea-php84/root/usr/bin/php /home/techshakerco99/public_html/flowdeskpos.com/artisan view:cache
+    # Repo path should be the CRM install (www.evergreencold.store). Paths use $HOME
+    # so this works without hard-coding the cPanel username.
+    - export APP_DIR="$(pwd)"
+    - export PHP_BIN="/opt/cpanel/ea-php84/root/usr/bin/php"
+    - |
+      if [ ! -x "$PHP_BIN" ]; then
+        for candidate in /opt/cpanel/ea-php83/root/usr/bin/php /opt/cpanel/ea-php82/root/usr/bin/php "$(command -v php)"; do
+          if [ -x "$candidate" ]; then PHP_BIN="$candidate"; break; fi
+        done
+      fi
+    - |
+      if command -v composer >/dev/null 2>&1; then
+        composer install --no-dev --optimize-autoloader --no-interaction
+      elif [ -x "$HOME/bin/composer" ]; then
+        "$HOME/bin/composer" install --no-dev --optimize-autoloader --no-interaction
+      fi
+    - "$PHP_BIN" "$APP_DIR/artisan" migrate --force
+    - "$PHP_BIN" "$APP_DIR/artisan" storage:link 2>/dev/null || true
+    - "$PHP_BIN" "$APP_DIR/artisan" optimize:clear
+    - "$PHP_BIN" "$APP_DIR/artisan" config:cache
+    - "$PHP_BIN" "$APP_DIR/artisan" route:cache
+    - "$PHP_BIN" "$APP_DIR/artisan" view:cache

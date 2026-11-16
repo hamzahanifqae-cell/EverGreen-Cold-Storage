@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AuthenticateStaffOrMerchant;
+use App\Http\Middleware\RestrictLandingDomain;
 use App\Http\Middleware\SetPanelAuthDefaults;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
@@ -19,6 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetPanelAuthDefaults::class,
         ]);
+
+        // Must be global so Filament panel routes on the apex host also redirect to www.
+        $middleware->append(RestrictLandingDomain::class);
 
         $middleware->alias([
             'auth.staff_or_merchant' => AuthenticateStaffOrMerchant::class,

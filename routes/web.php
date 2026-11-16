@@ -8,13 +8,28 @@ use App\Http\Controllers\Invoice\InvoiceController;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Merchant;
+use App\Support\DomainConfig;
 use App\Support\ProductStockAvailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'landing')->name('landing');
-Route::view('/how-it-works', 'how-it-works')->name('how-it-works');
+Route::get('/', function () {
+    // On the CRM host, send visitors to the merchant panel instead of the marketing site.
+    if (DomainConfig::splitEnabled() && DomainConfig::isAppHost(request()->getHost())) {
+        return redirect('/merchant/login');
+    }
+
+    return view('landing');
+})->name('landing');
+
+Route::get('/how-it-works', function () {
+    if (DomainConfig::splitEnabled() && DomainConfig::isAppHost(request()->getHost())) {
+        return redirect()->away(DomainConfig::landingUrl().'/how-it-works');
+    }
+
+    return view('how-it-works');
+})->name('how-it-works');
 
 Route::get('/demo/login', DemoAccountController::class)->name('demo.login');
 Route::get('/demo/exit', DemoExitController::class)->name('demo.exit');
