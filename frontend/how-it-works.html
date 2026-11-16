@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How it works · EverGreen Cold Storage</title>
+  <meta name="description" content="Complete EverGreen Cold Storage flow: setup, receipt, store, return, billing, and collection." />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <script>
+    (() => {
+      const appUrl = (window.EVERGREEN_APP_URL || 'https://evergreen-coldstorage.up.railway.app').replace(/\/$/, '');
+      window.location.replace(appUrl + '/how-it-works');
+    })();
+  </script>
+</head>
+<body>
+  <p>
+    <a id="fallback" href="https://evergreen-coldstorage.up.railway.app/how-it-works">Open How it works</a>
+  </p>
+  <script>
+    const appUrl = (window.EVERGREEN_APP_URL || 'https://evergreen-coldstorage.up.railway.app').replace(/\/$/, '');
+    document.getElementById('fallback').href = appUrl + '/how-it-works';
+  </script>
+</body>
+</html>

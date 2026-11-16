@@ -3,6 +3,7 @@
 namespace App\Services\ColdStorage;
 
 use App\Exceptions\ColdStorageException;
+use App\Models\ColdStorageBill;
 use App\Models\ColdStorageDispatch;
 use Illuminate\Support\Facades\DB;
 
@@ -11,6 +12,7 @@ class DispatchService
     public function __construct(
         private StockLedger $ledger,
         private DocumentReversal $reversal,
+        private BillingService $billing,
     ) {}
 
     public function post(ColdStorageDispatch $dispatch, ?string $actorId): ColdStorageDispatch
@@ -78,6 +80,36 @@ class DispatchService
 
             if (! $dispatch->isPosted()) {
                 throw ColdStorageException::make('Only a posted dispatch can be cancelled.');
+            }
+
+            $bill = ColdStorageBill::query()
+                ->where('dispatch_id', $dispatch->id)
+                ->where('status', 'posted')
+                ->first();
+
+            if ($bill) {
+                // Cancelling the bill refunds any collection, restores stock, and
+                // cancels this return.
+                $this->billing->cancel($bill, $actorId, $reason);
+
+                return $dispatch->refresh();
+            }
+
+            return $this->reverseStockAndMarkCancelled($dispatch, $actorId, $reason);
+        });
+    }
+
+    /**
+     * Reverse stock for a posted return and mark it cancelled, without touching bills.
+     * Used after a withdrawal-linked bill has already been cancelled.
+     */
+    public function reverseStockAndMarkCancelled(ColdStorageDispatch $dispatch, ?string $actorId, string $reason): ColdStorageDispatch
+    {
+        return DB::transaction(function () use ($dispatch, $actorId, $reason): ColdStorageDispatch {
+            $dispatch = ColdStorageDispatch::query()->whereKey($dispatch->id)->lockForUpdate()->firstOrFail();
+
+            if (! $dispatch->isPosted()) {
+                return $dispatch;
             }
 
             $this->reversal->reverse($dispatch, $actorId, $reason, now()->toDateString());

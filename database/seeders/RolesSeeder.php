@@ -5,135 +5,77 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class RolesSeeder extends Seeder
 {
     public function run(): void
     {
-        $rolesPermissions = [
+        // Only the Staff role is used for the staff portal (merchant guard).
+        // Scoped to dashboard + Cold Storage — no Roles, Merchants, Staff, Businesses, or Branches.
+        $role = Role::query()->firstOrCreate([
+            'name' => 'Staff',
+            'guard_name' => 'merchant',
+        ]);
 
-            // 🔴 PLATFORM LEVEL
-            'Super Admin' => [
-                '*',
-            ],
+        $permissionNames = collect(['dashboard.view', 'cold_storage.*'])
+            ->flatMap(function (string $permission) {
+                if (str_ends_with($permission, '.*')) {
+                    $module = str_replace('.*', '', $permission);
 
-            // 🟠 MERCHANT SUPER ADMIN — full access to all merchant-guard permissions
-            'Admin' => [
-                '*',
-            ],
-
-            // 🟡 SUPPORT
-            'Support Admin' => [
-                'dashboard.view',
-                'orders.view',
-                'orders.update',
-                'customers.view',
-                'vendors.view',
-                'notification_templates.view',
-                'invoice_templates.view',
-                'audits.view',
-                'products.view',
-                'reports.view',
-                'merchants.view',
-                'merchants.update',
-                'merchant_settings.view',
-                'merchant_settings.update',
-            ],
-
-            // 🔵 OPERATIONS
-            'Supervisor' => [
-                'orders.view',
-                'orders.create',
-                'orders.update',
-                'sales.view',
-                'sales.create',
-                'purchases.view',
-                'purchases.create',
-                'expenses.view',
-                'expenses.create',
-                'assets.view',
-                'assets.create',
-                'asset_types.view',
-                'asset_types.create',
-                'customers.view',
-                'vendors.view',
-                'products.view',
-            ],
-
-            // 🟢 FINANCE
-            'Finance Admin' => [
-                'reports.view',
-                'sales.view',
-                'purchases.view',
-                'expenses.view',
-                'assets.view',
-                'asset_types.view',
-                'payrolls.view',
-                'orders.view',
-            ],
-
-            // ⚪ DATA ENTRY
-            'Data Entry' => [
-                'products.create',
-                'products.update',
-                'customers.create',
-                'vendors.create',
-                'orders.create',
-            ],
-
-            // 🧊 COLD STORAGE STAFF — scoped to the Cold Storage module only.
-            // No access to Roles & Permissions, Merchants, Staff, Businesses or Branches.
-            'Staff' => [
-                'dashboard.view',
-                'cold_storage.*',
-            ],
-        ];
-
-        /**
-         * Only seed roles for these guards
-         */
-        $allowedGuards = ['merchant'];
-
-        foreach ($rolesPermissions as $roleName => $permissions) {
-
-            foreach ($allowedGuards as $guard) {
-
-                /**
-                 * ❌ Skip Super Admin for merchant guard
-                 */
-                if ($guard === 'merchant' && $roleName === 'Super Admin') {
-                    continue;
+                    return Permission::query()
+                        ->where('guard_name', 'merchant')
+                        ->where('name', 'like', $module.'.%')
+                        ->pluck('name');
                 }
 
-                $role = Role::firstOrCreate([
-                    'name' => $roleName,
-                    'guard_name' => $guard,
-                ]);
+                return [$permission];
+            })
+            ->unique()
+            ->values();
 
-                $finalPermissions = collect($permissions)->flatMap(function ($permission) use ($guard) {
+        $role->syncPermissions($permissionNames);
 
-                    // Super Admin → all permissions of the guard
-                    if ($permission === '*') {
-                        return Permission::where('guard_name', $guard)->pluck('name');
-                    }
+        $legacyRoleIds = Role::query()
+            ->where('guard_name', 'merchant')
+            ->where('name', '!=', 'Staff')
+            ->pluck('id');
 
-                    // Module wildcard (e.g. orders.*)
-                    if (str_ends_with($permission, '.*')) {
-                        $module = str_replace('.*', '', $permission);
-
-                        return Permission::where('guard_name', $guard)
-                            ->where('name', 'like', $module.'.%')
-                            ->pluck('name');
-                    }
-
-                    // Single permission
-                    return [$permission];
-                })
-                    ->unique()
-                    ->values();
-
-                $role->syncPermissions($finalPermissions);
-            }
+        if ($legacyRoleIds->isEmpty()) {
+            return;
         }
+
+        $staffRoleId = $role->id;
+
+        $assignments = DB::table('model_has_roles')
+            ->whereIn('role_id', $legacyRoleIds)
+            ->get();
+
+        foreach ($assignments as $row) {
+            $alreadyHasStaff = DB::table('model_has_roles')
+                ->where('role_id', $staffRoleId)
+                ->where('model_type', $row->model_type)
+                ->where('model_id', $row->model_id)
+                ->exists();
+
+            if ($alreadyHasStaff) {
+                DB::table('model_has_roles')
+                    ->where('role_id', $row->role_id)
+                    ->where('model_type', $row->model_type)
+                    ->where('model_id', $row->model_id)
+                    ->delete();
+
+                continue;
+            }
+
+            DB::table('model_has_roles')
+                ->where('role_id', $row->role_id)
+                ->where('model_type', $row->model_type)
+                ->where('model_id', $row->model_id)
+                ->update(['role_id' => $staffRoleId]);
+        }
+
+        DB::table('role_has_permissions')->whereIn('role_id', $legacyRoleIds)->delete();
+        Role::query()->whereIn('id', $legacyRoleIds)->delete();
     }
 }

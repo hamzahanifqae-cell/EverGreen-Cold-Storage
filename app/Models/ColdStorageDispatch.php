@@ -52,4 +52,9 @@ class ColdStorageDispatch extends Model implements Auditable
     {
         return $this->hasMany(ColdStorageDispatchLine::class, 'dispatch_id');
     }
+
+    public function bills(): HasMany
+    {
+        return $this->hasMany(ColdStorageBill::class, 'dispatch_id');
+    }
 }

@@ -40,7 +40,7 @@ class DemoAccountSeeder extends Seeder
         ])->save();
 
         $role = Role::query()
-            ->where('name', 'Admin')
+            ->where('name', 'Staff')
             ->where('guard_name', 'merchant')
             ->first();
 

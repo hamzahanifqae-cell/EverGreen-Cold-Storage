@@ -4,178 +4,635 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>EverGreen Cold Storage</title>
-  <meta name="description" content="Customer-owned cold storage management — receipts, dispatch, billing, and chamber monitoring." />
+  <meta name="description" content="Merchant panel for customer-owned cold storage: receive goods, track chambers, return stock, and bill storage rent." />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.bunny.net" />
+  <link href="https://fonts.bunny.net/css?family=bricolage-grotesque:650,700,760|manrope:400,600,700" rel="stylesheet" />
+  <script>
+    (() => {
+      try {
+        const stored = localStorage.getItem('evergreen-landing-theme');
+        const theme = stored === 'light' || stored === 'dark'
+          ? stored
+          : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (_) {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+    })();
+  </script>
   <style>
     :root {
-      --teal: #0f766e;
-      --teal-deep: #115e59;
-      --mint: #14b8a6;
-      --ink: #0f172a;
-      --muted: #64748b;
-      --paper: #f8fafc;
-      --line: #e2e8f0;
+      --eg-ink: #0b1f1c;
+      --eg-muted: #3d5c56;
+      --eg-paper: #f3faf7;
+      --eg-mist: #e7f6f1;
+      --eg-teal: #0f766e;
+      --eg-teal-deep: #0b4f4a;
+      --eg-btn: #0f766e;
+      --eg-btn-hover: #0b4f4a;
+      --eg-line: rgba(15, 118, 110, 0.16);
+      --eg-surface: rgba(255, 255, 255, 0.72);
+      --eg-surface-strong: #ffffff;
+      --eg-bg:
+        radial-gradient(1000px 520px at 12% -8%, rgba(45, 212, 191, 0.28), transparent 55%),
+        radial-gradient(900px 480px at 92% 8%, rgba(15, 118, 110, 0.18), transparent 50%),
+        linear-gradient(180deg, #f7fffc 0%, var(--eg-paper) 42%, #eef8f4 100%);
+      --eg-display: "Bricolage Grotesque", "Segoe UI", sans-serif;
+      --eg-body: "Manrope", "Segoe UI", sans-serif;
     }
-    * { box-sizing: border-box; }
+    html[data-theme="dark"] {
+      --eg-ink: #e8f7f2;
+      --eg-muted: #9bb8b1;
+      --eg-paper: #071412;
+      --eg-mist: #0d221f;
+      --eg-teal: #2dd4bf;
+      --eg-teal-deep: #5eead4;
+      --eg-btn: #0f766e;
+      --eg-btn-hover: #115e59;
+      --eg-line: rgba(94, 234, 212, 0.18);
+      --eg-surface: rgba(12, 28, 26, 0.82);
+      --eg-surface-strong: #102826;
+      --eg-bg:
+        radial-gradient(1000px 520px at 12% -8%, rgba(45, 212, 191, 0.16), transparent 55%),
+        radial-gradient(900px 480px at 92% 8%, rgba(15, 118, 110, 0.22), transparent 50%),
+        linear-gradient(180deg, #06110f 0%, #0a1a17 42%, #071412 100%);
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: auto; }
     body {
       margin: 0;
-      min-height: 100vh;
-      font-family: "Segoe UI", ui-sans-serif, system-ui, -apple-system, sans-serif;
-      color: var(--ink);
-      background:
-        radial-gradient(1200px 600px at 10% -10%, rgba(20, 184, 166, 0.18), transparent 60%),
-        radial-gradient(900px 500px at 100% 0%, rgba(15, 118, 110, 0.16), transparent 55%),
-        linear-gradient(180deg, #ffffff 0%, var(--paper) 100%);
+      color: var(--eg-ink);
+      font-family: var(--eg-body);
+      background: var(--eg-bg);
+      overflow-x: hidden;
+      transition: background 220ms ease, color 220ms ease;
     }
-    .wrap {
-      max-width: 920px;
-      margin: 0 auto;
-      padding: 48px 24px 64px;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 48px;
-    }
+    a { color: inherit; text-decoration: none; }
+    .shell { width: min(1120px, calc(100% - 2rem)); margin-inline: auto; }
+    .nav { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 0 0; position: relative; z-index: 20; }
+    .brand { display: inline-flex; align-items: center; gap: 0.7rem; font-family: var(--eg-display); font-weight: 760; letter-spacing: -0.03em; }
     .mark {
-      width: 42px;
-      height: 42px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--mint), var(--teal-deep));
-      box-shadow: 0 10px 30px -12px rgba(15, 118, 110, 0.7);
+      width: 2.4rem; height: 2.4rem; border-radius: 0.7rem;
+      background: linear-gradient(135deg, #2dd4bf, #0f766e);
     }
-    .brand strong {
-      font-size: 1.05rem;
-      letter-spacing: -0.02em;
+    .nav-actions { display: flex; align-items: center; gap: 0.65rem; }
+    .theme-toggle {
+      display: inline-flex; align-items: center; justify-content: center; width: 2.7rem; height: 2.7rem;
+      border: 1px solid var(--eg-line); border-radius: 0.7rem; background: var(--eg-surface); color: var(--eg-teal-deep);
+      cursor: pointer; backdrop-filter: blur(8px);
     }
-    h1 {
-      font-size: clamp(2.2rem, 5vw, 3.4rem);
-      line-height: 1.08;
-      letter-spacing: -0.03em;
-      margin: 0 0 16px;
-      max-width: 14ch;
+    .theme-toggle svg { width: 1.15rem; height: 1.15rem; }
+    .theme-toggle .icon-sun { display: none; }
+    html[data-theme="dark"] .theme-toggle .icon-sun { display: block; }
+    html[data-theme="dark"] .theme-toggle .icon-moon { display: none; }
+    .nav-link {
+      display: inline-flex; align-items: center; padding: 0.55rem 0.35rem;
+      color: var(--eg-muted); font-weight: 650; font-size: 0.92rem;
     }
-    .lead {
-      font-size: 1.125rem;
-      line-height: 1.6;
-      color: var(--muted);
-      max-width: 38rem;
-      margin: 0 0 28px;
+    .nav-link:hover { color: var(--eg-teal-deep); }
+    .nav-cta {
+      display: inline-flex; align-items: center; padding: 0.7rem 1.05rem; border-radius: 0.7rem;
+      border: 1px solid var(--eg-line); background: var(--eg-surface); color: var(--eg-teal-deep);
+      font-weight: 650; font-size: 0.92rem; backdrop-filter: blur(8px);
     }
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 40px;
+    @media (max-width: 640px) { .nav-link { display: none; } }
+    .hero { position: relative; isolation: isolate; min-height: min(100svh, 920px); display: grid; align-items: center; padding: 2.5rem 0 0; overflow: hidden; }
+    .hero-inner { position: relative; z-index: 2; width: min(1120px, calc(100% - 2rem)); margin-inline: auto; padding: 0 0 5.5rem; }
+    .frost { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; pointer-events: none; }
+    .mist-floor { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; height: min(52vh, 460px); pointer-events: none; overflow: hidden; }
+    .mist-floor::before {
+      content: ""; position: absolute; left: 8%; right: 8%; bottom: 12%; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.35) 20%, rgba(184, 243, 230, 0.55) 50%, rgba(45, 212, 191, 0.35) 80%, transparent);
+      animation: breathe 5s ease-in-out infinite;
     }
-    a.btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-      border-radius: 10px;
-      padding: 12px 18px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    .mist-floor::after {
+      content: ""; position: absolute; left: 12%; right: 12%; bottom: 8%; height: 42%; border-radius: 50%;
+      background: repeating-linear-gradient(90deg, transparent 0 28px, rgba(45, 212, 191, 0.07) 28px 29px), radial-gradient(ellipse at center, rgba(45, 212, 191, 0.16), transparent 72%);
+      transform: perspective(420px) rotateX(72deg); transform-origin: center bottom; animation: mist-drift 16s ease-in-out infinite;
     }
-    a.btn:hover { transform: translateY(-1px); }
-    a.primary {
-      color: #fff;
-      background: var(--teal);
-      box-shadow: 0 12px 28px -14px rgba(15, 118, 110, 0.9);
+    .mist-band { position: absolute; left: -10%; right: -10%; height: 55%; border-radius: 50%; opacity: 0.65; animation: mist-drift 14s ease-in-out infinite; }
+    .hero.is-atmosphere-paused .mist-band,
+    .hero.is-atmosphere-paused .mist-floor::before,
+    .hero.is-atmosphere-paused .mist-floor::after,
+    .hero.is-atmosphere-paused .orbit,
+    .hero.is-atmosphere-paused .glow,
+    .hero.is-atmosphere-paused .chamber,
+    .hero.is-atmosphere-paused .crate,
+    .hero.is-atmosphere-paused .vapor { animation-play-state: paused !important; }
+    .mist-1 { bottom: -18%; background: radial-gradient(ellipse at center, rgba(45, 212, 191, 0.38), transparent 68%); }
+    .mist-2 { bottom: -8%; height: 48%; background: radial-gradient(ellipse at 30% 60%, rgba(184, 243, 230, 0.42), transparent 70%); animation-duration: 18s; animation-direction: reverse; }
+    .mist-3 { bottom: 6%; height: 36%; background: radial-gradient(ellipse at 70% 40%, rgba(15, 118, 110, 0.3), transparent 65%); animation-duration: 11s; opacity: 0.55; }
+    html[data-theme="dark"] .mist-1 { background: radial-gradient(ellipse at center, rgba(45, 212, 191, 0.2), transparent 68%); }
+    html[data-theme="dark"] .mist-2 { background: radial-gradient(ellipse at 30% 60%, rgba(94, 234, 212, 0.16), transparent 70%); }
+    html[data-theme="dark"] .mist-3 { background: radial-gradient(ellipse at 70% 40%, rgba(15, 118, 110, 0.28), transparent 65%); }
+    .hero-grid { display: grid; gap: 2.5rem; align-items: center; }
+    @media (min-width: 960px) { .hero-grid { grid-template-columns: 1.05fr 0.95fr; gap: 1.5rem; } }
+    .kicker {
+      margin: 0 0 1rem; font-family: var(--eg-display); font-size: clamp(2.4rem, 7vw, 4.6rem);
+      font-weight: 760; letter-spacing: -0.045em; line-height: 0.92; color: var(--eg-teal-deep);
     }
-    a.primary:hover { background: var(--teal-deep); }
-    a.ghost {
-      color: var(--teal-deep);
-      background: rgba(15, 118, 110, 0.08);
-      border: 1px solid rgba(15, 118, 110, 0.18);
+    .kicker span {
+      display: block; color: var(--eg-ink); font-size: 0.42em; letter-spacing: 0.14em;
+      font-weight: 700; margin-top: 0.55rem;
     }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 14px;
+    .headline {
+      margin: 0 0 0.9rem; max-width: 14ch; font-family: var(--eg-display);
+      font-size: clamp(1.55rem, 3.4vw, 2.35rem); font-weight: 650; letter-spacing: -0.03em; line-height: 1.15;
     }
-    .card {
-      border: 1px solid var(--line);
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 14px;
-      padding: 16px 18px;
+    .lead { margin: 0 0 1.6rem; max-width: 34rem; color: var(--eg-muted); font-size: 1.05rem; line-height: 1.6; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 2.9rem;
+      padding: 0.75rem 1.2rem; border-radius: 0.75rem; font-weight: 700; font-size: 0.95rem;
+      transition: transform 180ms ease, background 180ms ease;
     }
-    .card h3 {
-      margin: 0 0 6px;
-      font-size: 0.98rem;
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: var(--eg-btn); color: #fff; }
+    .btn-primary:hover { background: var(--eg-btn-hover); }
+    .btn-secondary { background: var(--eg-surface); border: 1px solid var(--eg-line); color: var(--eg-teal-deep); }
+    .stage { position: relative; min-height: clamp(380px, 52vw, 520px); perspective: 1200px; display: grid; place-items: center; }
+    .glow {
+      position: absolute; inset: 8% 4% auto; height: 78%; border-radius: 50%;
+      background: radial-gradient(circle, rgba(45, 212, 191, 0.38), transparent 68%);
+      filter: blur(10px); animation: breathe 6s ease-in-out infinite;
     }
-    .card p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.9rem;
-      line-height: 1.45;
+    .orbit {
+      position: absolute; border-radius: 50%; border: 1px solid rgba(45, 212, 191, 0.22);
+      pointer-events: none; animation: orbit-spin 22s linear infinite;
     }
-    footer {
-      margin-top: 48px;
-      color: var(--muted);
-      font-size: 0.85rem;
+    .orbit-1 { width: min(88%, 420px); aspect-ratio: 1; border-color: rgba(45, 212, 191, 0.28); transform: rotateX(68deg) rotateZ(12deg); box-shadow: 0 0 24px rgba(45, 212, 191, 0.12); }
+    .orbit-2 { width: min(72%, 340px); aspect-ratio: 1; border-style: dashed; border-color: rgba(15, 118, 110, 0.28); animation-duration: 16s; animation-direction: reverse; transform: rotateX(68deg) rotateZ(-18deg); }
+    .orbit-3 { width: min(54%, 250px); aspect-ratio: 1; border-color: rgba(184, 243, 230, 0.35); animation-duration: 11s; transform: rotateX(68deg) rotateZ(40deg); opacity: 0.7; }
+    html[data-theme="dark"] .orbit { border-color: rgba(94, 234, 212, 0.22); }
+    .chamber {
+      position: relative; z-index: 2; width: min(100%, 500px); margin-inline: auto; aspect-ratio: 1.05 / 1;
+      transform-style: preserve-3d; transform: rotateX(18deg) rotateY(-28deg);
+      transition: transform 120ms linear; animation: float 7s ease-in-out infinite;
     }
-    code {
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 0.85em;
-      background: #f1f5f9;
-      padding: 0.1em 0.35em;
-      border-radius: 4px;
+    .face {
+      position: absolute; inset: 12% 10% 18% 10%; border-radius: 1.1rem;
+      border: 1px solid rgba(15, 118, 110, 0.22);
+      background: linear-gradient(160deg, rgba(255,255,255,0.88), rgba(183,243,230,0.45));
+      box-shadow: 0 28px 50px -28px rgba(11, 79, 74, 0.55); transform: translateZ(28px); overflow: hidden;
+    }
+    .door {
+      position: absolute; left: 12%; right: 12%; top: 18%; bottom: 22%; border-radius: 0.85rem;
+      border: 1px solid rgba(15, 118, 110, 0.2);
+      background: linear-gradient(180deg, rgba(15, 118, 110, 0.08), rgba(15, 118, 110, 0.18));
+    }
+    .temp {
+      position: absolute; top: 10%; right: 10%; z-index: 2; padding: 0.35rem 0.55rem; border-radius: 0.45rem;
+      background: rgba(11, 79, 74, 0.9); color: #e7fff8; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em;
+    }
+    .shelf { position: absolute; left: 14%; right: 14%; height: 3px; background: rgba(11, 79, 74, 0.22); transform: translateZ(36px); }
+    .shelf-1 { top: 42%; } .shelf-2 { top: 58%; }
+    .crate {
+      position: absolute; width: 28%; aspect-ratio: 1.2 / 1; border-radius: 0.45rem;
+      border: 1px solid rgba(11, 79, 74, 0.25); background: linear-gradient(145deg, #d7f7ee, #9fd8cb);
+      box-shadow: 0 10px 18px -12px rgba(11, 79, 74, 0.55); animation: crate 5.5s ease-in-out infinite;
+    }
+    .crate-1 { left: 18%; bottom: 28%; transform: translateZ(46px) rotateY(8deg); }
+    .crate-2 { left: 46%; bottom: 34%; width: 24%; background: linear-gradient(145deg, #c7efe4, #7fc4b5); transform: translateZ(58px) rotateY(-6deg); animation-delay: 0.4s; }
+    .crate-3 { left: 34%; bottom: 22%; width: 22%; background: linear-gradient(145deg, #e4fbf5, #a7ddd0); transform: translateZ(70px) rotateY(12deg); animation-delay: 0.8s; }
+    .vapor {
+      position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(circle at 30% 70%, rgba(255,255,255,0.45), transparent 28%), radial-gradient(circle at 70% 60%, rgba(255,255,255,0.3), transparent 24%);
+      mix-blend-mode: soft-light; animation: vapor 8s ease-in-out infinite;
+    }
+    .band + .band { border-top: 1px solid var(--eg-line); }
+    .band-alt {
+      background: linear-gradient(180deg, rgba(15, 118, 110, 0.045), transparent 42%), var(--eg-mist);
+    }
+    html[data-theme="dark"] .band-alt {
+      background: linear-gradient(180deg, rgba(45, 212, 191, 0.05), transparent 48%), rgba(8, 22, 20, 0.72);
+    }
+    .section { padding: clamp(3.75rem, 7vw, 5.5rem) 0; }
+    .eyebrow {
+      margin: 0 0 0.85rem; color: var(--eg-teal); font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.14em; text-transform: uppercase;
+    }
+    .section-head { max-width: 38rem; margin-bottom: clamp(1.75rem, 4vw, 2.5rem); }
+    .section-head h2 {
+      margin: 0 0 0.85rem; font-family: var(--eg-display); font-size: clamp(1.75rem, 3.1vw, 2.55rem);
+      font-weight: 700; letter-spacing: -0.035em; line-height: 1.12;
+    }
+    .section-head p { margin: 0; color: var(--eg-muted); line-height: 1.65; font-size: 1.05rem; }
+    .about { display: grid; gap: clamp(1.75rem, 4vw, 3rem); }
+    @media (min-width: 860px) { .about { grid-template-columns: 1.15fr 0.85fr; align-items: stretch; gap: 3.5rem; } }
+    .about-panel { padding: 1.35rem 0 0.25rem 1.25rem; border-left: 2px solid var(--eg-teal); }
+    .about-label {
+      margin: 0 0 0.65rem; color: var(--eg-teal-deep); font-size: 0.78rem; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .about-panel > p:last-child { margin: 0; color: var(--eg-muted); font-size: 1.05rem; line-height: 1.7; }
+    .split { display: grid; gap: 1.5rem; }
+    @media (min-width: 800px) { .split { grid-template-columns: 1fr 1fr; gap: 1.75rem; } }
+    .role { padding: 0.15rem 0 0.15rem 1.2rem; border-left: 2px solid var(--eg-teal); }
+    .role-mark {
+      display: inline-block; margin-bottom: 0.7rem; color: var(--eg-teal);
+      font-family: var(--eg-display); font-size: 0.92rem; font-weight: 700; letter-spacing: 0.08em;
+    }
+    .split-title { margin: 0 0 0.6rem; font-family: var(--eg-display); font-size: 1.28rem; font-weight: 700; letter-spacing: -0.025em; }
+    .split-copy { margin: 0; color: var(--eg-muted); line-height: 1.65; font-size: 1.02rem; }
+    .flow { position: relative; display: grid; gap: 0; }
+    .flow-steps { padding-left: 0.15rem; }
+    .flow-steps::before {
+      content: ""; position: absolute; top: 0.55rem; bottom: 0.55rem; left: 1.15rem; width: 1px;
+      background: linear-gradient(180deg, transparent, var(--eg-line) 8%, var(--eg-line) 92%, transparent);
+    }
+    @media (max-width: 719px) { .flow-steps::before { display: none; } }
+    .flow-row {
+      display: grid; gap: 0.55rem 1.35rem; padding: 1.2rem 0; border-top: 1px solid var(--eg-line); align-items: baseline;
+    }
+    @media (min-width: 720px) { .flow-row { grid-template-columns: 4.75rem 12rem 1fr; } }
+    .flow-row:last-child { border-bottom: 1px solid var(--eg-line); }
+    .flow-index {
+      position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center;
+      min-width: 2.35rem; height: 2.35rem; padding: 0 0.45rem; border: 1px solid var(--eg-line);
+      border-radius: 0.65rem; background: var(--eg-surface-strong); color: var(--eg-teal);
+      font-family: var(--eg-display); font-size: 0.92rem; font-weight: 700;
+    }
+    .flow-steps .flow-index { box-shadow: 0 0 0 6px var(--eg-paper); }
+    html[data-theme="dark"] .flow-steps .flow-index { box-shadow: 0 0 0 6px #071412; }
+    .flow-title { margin: 0; font-weight: 750; font-size: 1.08rem; letter-spacing: -0.015em; }
+    .flow-copy { margin: 0; color: var(--eg-muted); line-height: 1.6; font-size: 1.01rem; }
+    .setup { display: grid; gap: 0; border-top: 1px solid var(--eg-line); }
+    .setup-item {
+      display: grid; gap: 0.45rem 1.5rem; padding: 1.35rem 0; border-bottom: 1px solid var(--eg-line);
+    }
+    @media (min-width: 720px) { .setup-item { grid-template-columns: 12rem 1fr; align-items: baseline; } }
+    .setup-title { margin: 0; font-family: var(--eg-display); font-size: 1.08rem; font-weight: 700; letter-spacing: -0.02em; }
+    .setup-copy { margin: 0; color: var(--eg-muted); line-height: 1.65; font-size: 1.02rem; }
+    .clarify { display: grid; gap: clamp(1.75rem, 4vw, 3rem); }
+    @media (min-width: 860px) { .clarify { grid-template-columns: 1.15fr 0.85fr; align-items: stretch; gap: 3.5rem; } }
+    .clarify-copy h2 {
+      margin: 0 0 1rem; font-family: var(--eg-display); font-size: clamp(1.75rem, 3.1vw, 2.45rem);
+      font-weight: 700; letter-spacing: -0.035em; line-height: 1.12;
+    }
+    .clarify-answer { margin: 0; color: var(--eg-muted); font-size: 1.08rem; line-height: 1.65; }
+    .clarify-answer span { color: var(--eg-teal-deep); font-weight: 750; }
+    .cta {
+      padding: clamp(2.2rem, 5vw, 3rem) clamp(1.4rem, 4vw, 2.5rem); border-radius: 1.35rem; border: 1px solid var(--eg-line);
+      background:
+        radial-gradient(700px 240px at 50% 0%, rgba(45, 212, 191, 0.16), transparent 60%),
+        linear-gradient(160deg, rgba(15, 118, 110, 0.14), rgba(45, 212, 191, 0.06)),
+        var(--eg-surface);
+      text-align: center;
+    }
+    .cta h2 { margin: 0 0 0.7rem; font-family: var(--eg-display); font-size: clamp(1.7rem, 3vw, 2.35rem); font-weight: 700; letter-spacing: -0.03em; }
+    .cta > p { margin: 0 auto 1.45rem; max-width: 36rem; color: var(--eg-muted); line-height: 1.6; font-size: 1.05rem; }
+    .actions-center { justify-content: center; }
+    footer { padding: 0 0 2.75rem; color: var(--eg-muted); font-size: 0.88rem; }
+    .footer-rule { height: 1px; margin: 0 0 1.35rem; background: linear-gradient(90deg, var(--eg-line), transparent 85%); }
+    .reveal { opacity: 0; transform: translateY(12px); transition: opacity 420ms ease, transform 420ms ease; }
+    .reveal.is-visible { opacity: 1; transform: translateY(0); }
+    @keyframes float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+    @keyframes crate { 0%, 100% { translate: 0 0; } 50% { translate: 0 -6px; } }
+    @keyframes breathe { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
+    @keyframes vapor { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.8; } }
+    @keyframes mist-drift { 0%, 100% { transform: translateX(-3%) scale(1); opacity: 0.45; } 50% { transform: translateX(4%) scale(1.06); opacity: 0.7; } }
+    @keyframes orbit-spin { from { rotate: 0deg; } to { rotate: 360deg; } }
+    @media (prefers-reduced-motion: reduce) {
+      .chamber, .crate, .glow, .vapor, .mist-band, .orbit, .reveal { animation: none !important; transition: none !important; opacity: 1; transform: none; }
+      .frost { display: none; }
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="brand">
-      <div class="mark" aria-hidden="true"></div>
-      <strong>EverGreen Cold Storage</strong>
+  <header class="shell nav">
+    <a class="brand" href="/">
+      <span class="mark" aria-hidden="true"></span>
+      EverGreen
+    </a>
+    <div class="nav-actions">
+      <button type="button" class="theme-toggle" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false" title="Switch to dark mode">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 14.3A8.2 8.2 0 0 1 9.7 3 7.4 7.4 0 1 0 21 14.3Z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.7 4.7l1.6 1.6M17.7 17.7l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.7 19.3l1.6-1.6M17.7 6.3l1.6-1.6" stroke-linecap="round"/></svg>
+      </button>
+      <a class="nav-cta" href="/how-it-works.html">How it works</a>
     </div>
+  </header>
 
-    <h1>Cold storage operations, without shop POS confusion.</h1>
-    <p class="lead">
-      Receive customer-owned goods, track chambers and lots, dispatch cleanly,
-      and bill storage rent — all in one merchant panel.
-    </p>
-
-    <div class="actions">
-      <a class="btn primary" id="app-login" href="https://evergreen-coldstorage.up.railway.app/merchant/login">
-        Open merchant panel
-      </a>
-      <a class="btn ghost" href="https://evergreen-coldstorage.up.railway.app/merchant/login">
-        Staff / merchant login
-      </a>
-    </div>
-
-    <div class="grid">
-      <div class="card">
-        <h3>Goods in &amp; out</h3>
-        <p>Receipts, partial dispatch, transfers, and damage adjustments with stock safety checks.</p>
+  <main>
+    <section class="hero">
+      <canvas class="frost" data-frost aria-hidden="true"></canvas>
+      <div class="mist-floor" aria-hidden="true">
+        <span class="mist-band mist-1"></span>
+        <span class="mist-band mist-2"></span>
+        <span class="mist-band mist-3"></span>
       </div>
-      <div class="card">
-        <h3>Billing</h3>
-        <p>Rate cards and one-click bills from remaining stock for any date period.</p>
+      <div class="hero-inner">
+        <div class="hero-grid">
+          <div>
+            <p class="kicker">EverGreen<span>COLD STORAGE</span></p>
+            <h1 class="headline">Customer-owned goods. Chamber-ready operations.</h1>
+            <p class="lead">
+              Receive lots into cold rooms, track what is still in store, return cleanly, and collect storage rent — without treating deposits like shop inventory.
+            </p>
+            <div class="actions">
+              <a class="btn btn-primary" href="/how-it-works.html">How it works</a>
+            </div>
+          </div>
+          <div class="stage" data-stage aria-hidden="true">
+            <div class="glow"></div>
+            <div class="orbit orbit-1"></div>
+            <div class="orbit orbit-2"></div>
+            <div class="orbit orbit-3"></div>
+            <div class="chamber" data-chamber>
+              <div class="face">
+                <div class="temp">-18°C</div>
+                <div class="door"></div>
+                <div class="shelf shelf-1"></div>
+                <div class="shelf shelf-2"></div>
+                <div class="crate crate-1"></div>
+                <div class="crate crate-2"></div>
+                <div class="crate crate-3"></div>
+                <div class="vapor"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="card">
-        <h3>Chamber health</h3>
-        <p>Temperature alerts, capacity heatmap, lot ageing, and reservations.</p>
-      </div>
-    </div>
+    </section>
 
-    <footer>
-      Demo login after deploy: <code>info@evergreen.com</code> · Frontend on Vercel · API/app on Railway
-    </footer>
-  </div>
+    <section id="about" class="band">
+      <div class="shell section">
+        <div class="about">
+          <div class="section-head reveal" data-reveal>
+            <p class="eyebrow">Product</p>
+            <h2>Built for cold stores, not retail POS.</h2>
+            <p>EverGreen is a merchant panel for facilities that hold customer-owned bags, crates, and weight in chambers — then charge storage rent when goods leave or over a billing period.</p>
+          </div>
+          <aside class="about-panel reveal" data-reveal>
+            <p class="about-label">Ownership model</p>
+            <p>Depositors keep ownership of their stock. Your team posts receipts, returns, transfers, and damage adjustments without creating shop sales or purchase inventory. That keeps the cold-store ledger clean and easy to explain to customers.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section id="who" class="band band-alt">
+      <div class="shell section">
+        <div class="section-head reveal" data-reveal>
+          <p class="eyebrow">Audience</p>
+          <h2>Who it is for</h2>
+        </div>
+        <div class="split">
+          <article class="role reveal" data-reveal>
+            <span class="role-mark" aria-hidden="true">01</span>
+            <h3 class="split-title">Cold store teams</h3>
+            <p class="split-copy">Receive inbound lots, allocate into chambers or racks, and hand goods back when the customer asks — with quantity checks so you cannot over-dispatch.</p>
+          </article>
+          <article class="role reveal" data-reveal>
+            <span class="role-mark" aria-hidden="true">02</span>
+            <h3 class="split-title">Billing &amp; cash desks</h3>
+            <p class="split-copy">Bill from remaining stock against rate cards, preview the calculation, then collect into cash in hand or bank so balances show on the dashboard.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="shell section">
+        <div class="section-head reveal" data-reveal>
+          <p class="eyebrow">Operations</p>
+          <h2>The daily flow</h2>
+          <p>One operating loop from the door to the bill.</p>
+        </div>
+        <div class="flow flow-steps">
+          <div class="flow-row reveal" data-reveal><div class="flow-index">01</div><h3 class="flow-title">Receive</h3><p class="flow-copy">Post inbound lots with product, packages, weight, and chamber allocation. Stock appears on the dashboard after post.</p></div>
+          <div class="flow-row reveal" data-reveal><div class="flow-index">02</div><h3 class="flow-title">Store</h3><p class="flow-copy">Track stock on hand by lot, chamber occupancy, transfers between locations, and temperature exceptions.</p></div>
+          <div class="flow-row reveal" data-reveal><div class="flow-index">03</div><h3 class="flow-title">Return</h3><p class="flow-copy">Dispatch partial or full lots for the same customer. Available quantity is enforced; no sale invoice is created.</p></div>
+          <div class="flow-row reveal" data-reveal><div class="flow-index">04</div><h3 class="flow-title">Bill &amp; collect</h3><p class="flow-copy">Create a bill from remaining stock, run calculation preview, post, then record payment into cash in hand or bank.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="capabilities" class="band band-alt">
+      <div class="shell section">
+        <div class="section-head reveal" data-reveal>
+          <p class="eyebrow">Workspace</p>
+          <h2>What the panel covers</h2>
+          <p>Everything operators need for customer-owned cold storage in one merchant workspace.</p>
+        </div>
+        <div class="flow">
+          <div class="flow-row reveal" data-reveal><div class="flow-index">IN</div><h3 class="flow-title">Goods receipts</h3><p class="flow-copy">Branch, customer, lot lines, chamber allocation, draft to posted workflow.</p></div>
+          <div class="flow-row reveal" data-reveal><div class="flow-index">OUT</div><h3 class="flow-title">Returns</h3><p class="flow-copy">Hand stock back from active lots with partial quantities and stock safety checks.</p></div>
+          <div class="flow-row reveal" data-reveal><div class="flow-index">AR</div><h3 class="flow-title">Storage billing</h3><p class="flow-copy">Rate cards, bill-from-stock, invoices, due amounts, and collected payments.</p></div>
+          <div class="flow-row reveal" data-reveal><div class="flow-index">CA</div><h3 class="flow-title">Cash accounts</h3><p class="flow-copy">Route each payment to cash in hand or bank; live balances on the dashboard.</p></div>
+          <div class="flow-row reveal" data-reveal><div class="flow-index">ID</div><h3 class="flow-title">Customer overview</h3><p class="flow-copy">Per customer: packages given for storage, returned, still in store, with deep links to lists.</p></div>
+          <div class="flow-row reveal" data-reveal><div class="flow-index">°C</div><h3 class="flow-title">Chamber health</h3><p class="flow-copy">Temperature readings, action alerts, capacity heatmap, and optional reservations.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="shell section">
+        <div class="section-head reveal" data-reveal>
+          <p class="eyebrow">Configuration</p>
+          <h2>Setup once, operate every day</h2>
+          <p>Configure the facility, then the daily work stays simple.</p>
+        </div>
+        <div class="setup">
+          <div class="setup-item reveal" data-reveal>
+            <h3 class="setup-title">Facility</h3>
+            <p class="setup-copy">Businesses, branches, chambers with capacity and temperature limits, optional racks and bins.</p>
+          </div>
+          <div class="setup-item reveal" data-reveal>
+            <h3 class="setup-title">Parties &amp; products</h3>
+            <p class="setup-copy">Customers (goods owners), products such as potatoes or apples, and storage rate cards by bag, weight, or period.</p>
+          </div>
+          <div class="setup-item reveal" data-reveal>
+            <h3 class="setup-title">Exceptions</h3>
+            <p class="setup-copy">Damage and adjustments for torn or lost packages, with a reason, so the ledger stays accurate.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band band-alt">
+      <div class="shell section">
+        <div class="clarify reveal" data-reveal>
+          <div class="clarify-copy">
+            <p class="eyebrow">Clarity</p>
+            <h2>Clear answer when someone asks “is this my shop stock?”</h2>
+            <p class="clarify-answer"><span>No.</span> Cold storage movements never create classic sales or purchases product stock.</p>
+          </div>
+          <aside class="about-panel">
+            <p class="about-label">Why it matters</p>
+            <p>Goods stay on the customer’s deposit until returned. That is the core difference from a normal shop POS — and the reason EverGreen exists as a dedicated cold-store panel.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="shell section">
+        <div class="cta reveal" data-reveal>
+          <p class="eyebrow">Get started</p>
+          <h2>Run the cold store from one panel.</h2>
+          <p>Dashboard, receipts, returns, customer stock, billing, and cash accounts — ready for operators and demos.</p>
+          <div class="actions actions-center">
+            <a class="btn btn-primary" href="/how-it-works.html">How it works</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <div class="footer-rule" aria-hidden="true"></div>
+    <p>EverGreen Cold Storage · Merchant operations for customer-owned goods</p>
+  </footer>
 
   <script>
-    // Optional: override from Vercel env injected at build time via meta tag later
-    window.EVERGREEN_APP_URL = window.EVERGREEN_APP_URL || null;
-    if (window.EVERGREEN_APP_URL) {
-      document.querySelectorAll('#app-login, a.ghost').forEach((el) => {
-        el.href = window.EVERGREEN_APP_URL.replace(/\/$/, '') + '/merchant/login';
+    const THEME_KEY = 'evergreen-landing-theme';
+    const getStoredTheme = () => { try { return localStorage.getItem(THEME_KEY); } catch { return null; } };
+    const resolveTheme = () => {
+      const stored = getStoredTheme();
+      if (stored === 'light' || stored === 'dark') return stored;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    };
+    const applyTheme = (theme) => {
+      document.documentElement.setAttribute('data-theme', theme);
+      const toggle = document.querySelector('[data-theme-toggle]');
+      if (toggle) {
+        const nextLabel = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+        toggle.setAttribute('aria-label', nextLabel);
+        toggle.setAttribute('title', nextLabel);
+        toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+      }
+    };
+    const setTheme = (theme) => {
+      applyTheme(theme);
+      try { localStorage.setItem(THEME_KEY, theme); } catch {}
+    };
+    applyTheme(resolveTheme());
+    const themeToggle = document.querySelector('[data-theme-toggle]');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', () => {
+        const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+        setTheme(current === 'dark' ? 'light' : 'dark');
       });
+    }
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const chamber = document.querySelector('[data-chamber]');
+    const stage = document.querySelector('[data-stage]');
+    if (chamber && stage && !reduceMotion) {
+      stage.addEventListener('pointermove', (event) => {
+        const rect = stage.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / rect.width - 0.5;
+        const y = (event.clientY - rect.top) / rect.height - 0.5;
+        chamber.style.transform = `rotateX(${18 - y * 12}deg) rotateY(${-28 + x * 18}deg)`;
+      });
+      stage.addEventListener('pointerleave', () => {
+        chamber.style.transform = 'rotateX(18deg) rotateY(-28deg)';
+      });
+    }
+
+    const frostCanvas = document.querySelector('[data-frost]');
+    const hero = frostCanvas?.closest('.hero');
+    if (frostCanvas && hero && !reduceMotion) {
+      const ctx = frostCanvas.getContext('2d', { alpha: true, desynchronized: true });
+      const particles = [];
+      let width = 0;
+      let height = 0;
+      let rafId = 0;
+      let lastTs = 0;
+      let heroVisible = true;
+      let scrolling = false;
+      let scrollTimer = 0;
+      const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+      const stopLoop = () => { if (rafId) { window.cancelAnimationFrame(rafId); rafId = 0; } };
+      const resize = () => {
+        const rect = hero.getBoundingClientRect();
+        width = Math.max(1, Math.floor(rect.width));
+        height = Math.max(1, Math.floor(rect.height));
+        frostCanvas.width = width;
+        frostCanvas.height = height;
+        frostCanvas.style.width = `${width}px`;
+        frostCanvas.style.height = `${height}px`;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        const count = Math.round(Math.min(48, Math.max(28, width / 28)));
+        particles.length = 0;
+        for (let i = 0; i < count; i += 1) {
+          const lowerBias = Math.random() > 0.35;
+          particles.push({
+            x: Math.random() * width,
+            y: lowerBias ? height * (0.45 + Math.random() * 0.55) : Math.random() * height,
+            r: 1 + Math.random() * 1.8,
+            vx: -0.16 + Math.random() * 0.32,
+            vy: -0.06 - Math.random() * 0.28,
+            twinkle: Math.random() * Math.PI * 2,
+            speed: 0.55 + Math.random() * 0.9,
+          });
+        }
+      };
+      const draw = (ts) => {
+        rafId = 0;
+        if (!heroVisible || scrolling) return;
+        const delta = Math.min(32, ts - (lastTs || ts)) / 16.67;
+        lastTs = ts;
+        ctx.clearRect(0, 0, width, height);
+        const dark = isDark();
+        const base = dark ? '94, 234, 212' : '15, 118, 110';
+        for (const p of particles) {
+          p.x += p.vx * p.speed * delta;
+          p.y += p.vy * p.speed * delta;
+          p.twinkle += 0.025 * delta;
+          if (p.y < -8) { p.y = height + 6; p.x = Math.random() * width; }
+          if (p.x < -8) { p.x = width + 6; }
+          else if (p.x > width + 8) { p.x = -6; }
+          const alpha = (0.16 + Math.abs(Math.sin(p.twinkle)) * 0.38) * (dark ? 0.8 : 0.65);
+          ctx.beginPath();
+          ctx.fillStyle = `rgba(${base}, ${alpha})`;
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        rafId = window.requestAnimationFrame(draw);
+      };
+      const startLoop = () => {
+        if (!heroVisible || scrolling || rafId) return;
+        lastTs = 0;
+        rafId = window.requestAnimationFrame(draw);
+      };
+      resize();
+      startLoop();
+      new IntersectionObserver(([entry]) => {
+        heroVisible = entry.isIntersecting;
+        hero.classList.toggle('is-atmosphere-paused', !heroVisible);
+        if (heroVisible) startLoop();
+        else stopLoop();
+      }, { threshold: 0.05 }).observe(hero);
+      window.addEventListener('scroll', () => {
+        scrolling = true;
+        hero.classList.add('is-atmosphere-paused');
+        stopLoop();
+        window.clearTimeout(scrollTimer);
+        scrollTimer = window.setTimeout(() => {
+          scrolling = false;
+          hero.classList.remove('is-atmosphere-paused');
+          startLoop();
+        }, 140);
+      }, { passive: true });
+      window.addEventListener('resize', () => { stopLoop(); resize(); startLoop(); }, { passive: true });
+    }
+
+    const reveals = document.querySelectorAll('[data-reveal]');
+    if (!reduceMotion) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -4% 0px' });
+      reveals.forEach((node) => observer.observe(node));
+    } else {
+      reveals.forEach((node) => node.classList.add('is-visible'));
     }
   </script>
 </body>

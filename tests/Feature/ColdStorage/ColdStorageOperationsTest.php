@@ -23,6 +23,7 @@ use App\Models\ColdStorageTransfer;
 use App\Models\ColdStorageTransferLine;
 use App\Models\Customer;
 use App\Models\Merchant;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\Purchase;
 use App\Models\Sale;
@@ -30,9 +31,11 @@ use App\Models\User;
 use App\Services\ColdStorage\ActionAlertMailService;
 use App\Services\ColdStorage\AdjustmentService;
 use App\Services\ColdStorage\BillingService;
+use App\Services\ColdStorage\CustomerLedgerService;
 use App\Services\ColdStorage\DispatchService;
 use App\Services\ColdStorage\OccupancyService;
 use App\Services\ColdStorage\ReceiptService;
+use App\Services\ColdStorage\RentCollectionRegisterService;
 use App\Services\ColdStorage\ReportService;
 use App\Services\ColdStorage\StockRegisterService;
 use App\Services\ColdStorage\TransferService;
@@ -281,42 +284,139 @@ class ColdStorageOperationsTest extends TestCase
         $this->assertSame(20.0, (float) ColdStorageBillLine::query()->where('bill_id', $rebill->id)->value('quantity_days'));
     }
 
-    public function test_bill_this_withdrawal_scopes_billing_to_the_dispatched_lot_only(): void
+    public function test_bill_a_withdrawal_posts_and_collects_into_cash_in_hand_or_bank(): void
     {
         $world = $this->storeGoods(packages: 10, weight: 100, on: now()->subDays(3)->toDateString());
         $this->rate($world, 4);
         $dispatch = $this->dispatchGoods($world, packages: 6, weight: 60);
 
-        $bill = app(BillingService::class)->createDraftFromDispatch($dispatch, null);
-
-        $this->assertSame($dispatch->id, $bill->dispatch_id);
-        $this->assertSame($world['branch']->id, $bill->branch_id);
-
-        $posted = app(BillingService::class)->post($bill, null);
+        $handBefore = (float) $world['merchant']->refresh()->cash_in_hand;
+        $posted = app(BillingService::class)->billDispatchAndCollect($dispatch, 'cash_in_hand', null);
 
         $this->assertSame('posted', $posted->status);
+        $this->assertSame($dispatch->id, $posted->dispatch_id);
+        $this->assertSame($world['branch']->id, $posted->branch_id);
         $this->assertGreaterThan(0, (float) $posted->total_amount);
+        $this->assertSame(0.0, (float) $posted->due_amount);
+        $this->assertSame((float) $posted->total_amount, (float) $posted->paid_amount);
         $this->assertSame($world['item']->id, ColdStorageBillLine::query()->where('bill_id', $posted->id)->value('receipt_item_id'));
+        $this->assertSame(
+            round($handBefore + (float) $posted->total_amount, 2),
+            (float) $world['merchant']->refresh()->cash_in_hand,
+        );
+
+        $bankBefore = (float) $world['merchant']->refresh()->cash_in_bank;
+        $secondDispatch = $this->dispatchGoods($world, packages: 2, weight: 20);
+        $bankBill = app(BillingService::class)->billDispatchAndCollect($secondDispatch, 'cash_in_bank', null);
+
+        $this->assertSame(
+            round($bankBefore + (float) $bankBill->total_amount, 2),
+            (float) $world['merchant']->refresh()->cash_in_bank,
+        );
     }
 
-    public function test_bill_this_withdrawal_charges_only_the_withdrawn_quantity_even_on_a_same_day_round_trip(): void
+    public function test_posting_a_return_does_not_create_a_bill_until_billed_manually(): void
+    {
+        $world = $this->storeGoods(packages: 10, weight: 100, on: now()->subDays(3)->toDateString());
+        $this->rate($world, 4);
+        $dispatch = $this->dispatchGoods($world, packages: 6, weight: 60);
+
+        $this->assertSame('posted', $dispatch->status);
+        $this->assertSame(4.0, $this->balance($world)['packages']);
+        $this->assertSame(0, ColdStorageBill::query()->where('dispatch_id', $dispatch->id)->count());
+    }
+
+    public function test_unbilled_return_rent_is_estimated_until_the_withdrawal_is_billed(): void
+    {
+        $world = $this->storeGoods(packages: 10, weight: 100, on: now()->subDays(3)->toDateString());
+        $this->rate($world, 4);
+        $dispatch = $this->dispatchGoods($world, packages: 6, weight: 60);
+        $billing = app(BillingService::class);
+
+        $toCollect = $billing->estimateDispatchTotal($dispatch);
+        $this->assertGreaterThan(0, $toCollect);
+
+        $posted = $billing->billDispatchAndCollect($dispatch, 'cash_in_hand', null);
+
+        $this->assertSame($toCollect, (float) $posted->total_amount);
+        $this->assertSame(0.0, $billing->estimateDispatchTotal($dispatch->refresh()));
+    }
+
+    public function test_cancelling_an_unpaid_withdrawal_bill_via_return_cancel_restores_stock(): void
+    {
+        $world = $this->storeGoods(packages: 10, weight: 100, on: now()->subDays(3)->toDateString());
+        $this->rate($world, 4);
+        $dispatch = $this->dispatchGoods($world, packages: 6, weight: 60);
+        $bill = app(BillingService::class)->createDraftFromDispatch($dispatch, null);
+        $posted = app(BillingService::class)->post($bill, null);
+
+        app(DispatchService::class)->cancel($dispatch, null, 'Wrong vehicle');
+
+        $this->assertSame('cancelled', $dispatch->refresh()->status);
+        $this->assertSame('cancelled', $posted->refresh()->status);
+        $this->assertSame(10.0, $this->balance($world)['packages']);
+    }
+
+    public function test_cancelling_a_withdrawal_bill_restores_stock_to_the_chamber(): void
+    {
+        $world = $this->storeGoods(packages: 10, weight: 100, on: now()->subDays(3)->toDateString());
+        $this->rate($world, 4);
+        $dispatch = $this->dispatchGoods($world, packages: 6, weight: 60);
+        $bill = app(BillingService::class)->createDraftFromDispatch($dispatch, null);
+        $posted = app(BillingService::class)->post($bill, null);
+
+        $this->assertSame(4.0, $this->balance($world)['packages']);
+
+        app(BillingService::class)->cancel($posted, null, 'Customer kept the goods');
+
+        $this->assertSame('cancelled', $posted->refresh()->status);
+        $this->assertSame('cancelled', $dispatch->refresh()->status);
+        $this->assertSame(10.0, $this->balance($world)['packages']);
+        $this->assertSame(10.0, $this->balance($world, $world['location']->id)['packages']);
+    }
+
+    public function test_cancelling_a_paid_withdrawal_bill_refunds_cash_and_restores_stock(): void
+    {
+        $world = $this->storeGoods(packages: 10, weight: 100, on: now()->subDays(3)->toDateString());
+        $this->rate($world, 4);
+        $dispatch = $this->dispatchGoods($world, packages: 6, weight: 60);
+
+        $handBefore = (float) $world['merchant']->refresh()->cash_in_hand;
+        $posted = app(BillingService::class)->billDispatchAndCollect($dispatch, 'cash_in_hand', null);
+        $collected = (float) $posted->total_amount;
+
+        $this->assertSame(0.0, (float) $posted->due_amount);
+        $this->assertSame(
+            round($handBefore + $collected, 2),
+            (float) $world['merchant']->refresh()->cash_in_hand,
+        );
+
+        app(BillingService::class)->cancel($posted, null, 'Customer kept the goods');
+
+        $this->assertSame('cancelled', $posted->refresh()->status);
+        $this->assertSame(0.0, (float) $posted->paid_amount);
+        $this->assertSame('cancelled', $dispatch->refresh()->status);
+        $this->assertSame(10.0, $this->balance($world)['packages']);
+        $this->assertSame($handBefore, (float) $world['merchant']->refresh()->cash_in_hand);
+        $this->assertSame(1, $posted->payments()->where('entry_type', 'refund')->count());
+    }
+
+    public function test_bill_a_withdrawal_charges_only_the_withdrawn_quantity_even_on_a_same_day_round_trip(): void
     {
         $today = now()->toDateString();
         $world = $this->storeGoods(packages: 50, weight: 500, on: $today);
         $this->rate($world, 10, billArrival: true, billDeparture: false);
         $dispatch = $this->dispatchGoods($world, packages: 20, weight: 200);
 
-        $withdrawalBill = app(BillingService::class)->createDraftFromDispatch($dispatch, null);
-        $preview = app(BillingService::class)->preview($withdrawalBill);
+        $withdrawalBill = app(BillingService::class)->billDispatchAndCollect($dispatch, 'cash_in_hand', null);
 
         // Only the 20 withdrawn bags are billed here, for the one day they sat
         // in the chamber — not the 30 that remain, even though withdrawal
         // happened the same day the lot arrived.
-        $this->assertCount(1, $preview['lines']);
-        $this->assertSame(20.0, (float) $preview['lines'][0]['quantity_days']);
-        $this->assertSame(200.0, (float) $preview['lines'][0]['line_total']);
-
-        app(BillingService::class)->post($withdrawalBill, null);
+        $this->assertSame('posted', $withdrawalBill->status);
+        $this->assertSame(20.0, (float) ColdStorageBillLine::query()->where('bill_id', $withdrawalBill->id)->value('quantity_days'));
+        $this->assertSame(200.0, (float) ColdStorageBillLine::query()->where('bill_id', $withdrawalBill->id)->value('line_total'));
+        $this->assertSame(0.0, (float) $withdrawalBill->due_amount);
 
         // A later period bill covering the same day must only pick up the 30
         // bags still in the chamber: the entitlement already claimed by the
@@ -362,7 +462,7 @@ class ColdStorageOperationsTest extends TestCase
         $advance = $billing->recordAdvancePayment($world['customer'], 1000, now()->toDateString(), 'cash_in_hand', null);
 
         $this->expectException(ColdStorageException::class);
-        $this->expectExceptionMessage("outstanding balance");
+        $this->expectExceptionMessage('outstanding balance');
 
         $billing->allocateAdvanceToBill($advance, $posted, 500, now()->toDateString(), null);
     }
@@ -982,7 +1082,7 @@ class ColdStorageOperationsTest extends TestCase
     public function test_customer_ledger_running_balance_matches_debits_and_credits(): void
     {
         $world = $this->world();
-        $ledger = app(\App\Services\ColdStorage\CustomerLedgerService::class);
+        $ledger = app(CustomerLedgerService::class);
 
         $this->postedBillFixture($world, 'SB-A', 185500, now()->subDays(10)->toDateString());
         $this->paymentFixture($world, 170800, now()->subDays(5)->toDateString());
@@ -999,7 +1099,7 @@ class ColdStorageOperationsTest extends TestCase
     public function test_customer_ledger_filtered_statement_carries_opening_balance_forward(): void
     {
         $world = $this->world();
-        $ledger = app(\App\Services\ColdStorage\CustomerLedgerService::class);
+        $ledger = app(CustomerLedgerService::class);
 
         $this->postedBillFixture($world, 'SB-A', 185500, now()->subDays(10)->toDateString());
         $this->paymentFixture($world, 170800, now()->subDays(5)->toDateString());
@@ -1023,7 +1123,7 @@ class ColdStorageOperationsTest extends TestCase
         $advance = $billing->recordAdvancePayment($world['customer'], 1000, now()->toDateString(), 'cash_in_hand', null);
         $billing->allocateAdvanceToBill($advance, $posted, 20, now()->toDateString(), null);
 
-        $ledger = app(\App\Services\ColdStorage\CustomerLedgerService::class);
+        $ledger = app(CustomerLedgerService::class);
         $statement = $ledger->statement($world['customer'], []);
 
         // Bill (debit 20) + advance receipt (credit 1000) = -980. The allocation itself
@@ -1067,7 +1167,7 @@ class ColdStorageOperationsTest extends TestCase
      */
     private function paymentFixture(array $world, float $amount, string $date): void
     {
-        \App\Models\Payment::query()->create([
+        Payment::query()->create([
             'merchant_id' => $world['merchant']->id,
             'paymentable_type' => Customer::class,
             'paymentable_id' => $world['customer']->id,
@@ -1164,11 +1264,11 @@ class ColdStorageOperationsTest extends TestCase
         $dispatch = $this->dispatchGoods($world, packages: 6, weight: 60);
 
         $billing = app(BillingService::class);
-        $bill = $billing->createDraftFromDispatch($dispatch, null, now()->subDays(3)->toDateString());
-        $posted = $billing->post($bill, null);
+        $draft = $billing->createDraftFromDispatch($dispatch, null, now()->subDays(3)->toDateString());
+        $posted = $billing->post($draft, null);
         $billing->recordPayment($posted, 10, now()->toDateString(), 'cash_in_hand', null);
 
-        $register = app(\App\Services\ColdStorage\RentCollectionRegisterService::class)->register([
+        $register = app(RentCollectionRegisterService::class)->register([
             'merchant_id' => $world['merchant']->id,
         ]);
 
@@ -1183,11 +1283,10 @@ class ColdStorageOperationsTest extends TestCase
     public function test_rent_collection_register_shows_a_period_bill_without_double_counting(): void
     {
         $world = $this->storeGoods(packages: 10, weight: 100, on: now()->subDays(3)->toDateString());
-        $this->rate($world, 4);
+        // Return first, then bill the older period-based way ("Bill from stock").
         $dispatch = $this->dispatchGoods($world, packages: 6, weight: 60);
+        $this->rate($world, 4);
 
-        // Billed the older, period-based way ("Bill from stock"), not scoped to
-        // this specific withdrawal, which is how most existing bills are created.
         $billing = app(BillingService::class);
         $bill = $billing->createDraftFromStock([
             'branch_id' => $world['branch']->id,
@@ -1198,7 +1297,7 @@ class ColdStorageOperationsTest extends TestCase
         $posted = $billing->post($bill, null);
         $billing->recordPayment($posted, 10, now()->toDateString(), 'cash_in_hand', null);
 
-        $register = app(\App\Services\ColdStorage\RentCollectionRegisterService::class)->register([
+        $register = app(RentCollectionRegisterService::class)->register([
             'merchant_id' => $world['merchant']->id,
         ]);
 

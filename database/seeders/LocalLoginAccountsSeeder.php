@@ -2,6 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\Branch;
+use App\Models\BranchUser;
+use App\Models\Business;
+use App\Models\BusinessUser;
 use App\Models\Merchant;
 use App\Models\Role;
 use App\Models\User;
@@ -32,12 +36,20 @@ class LocalLoginAccountsSeeder extends Seeder
             'is_active' => true,
         ])->save();
 
+        $this->ensureStaffUser(
+            $merchant,
+            'EverGreen Staff',
+            'staff@evergreen.com',
+            'Staff',
+            'Evergreen@123',
+        );
+
         $staffAccounts = [
-            ['name' => 'Flowdesk Admin', 'email' => 'admin@flowdesk.com', 'role' => 'Admin'],
-            ['name' => 'Flowdesk Supervisor', 'email' => 'supervisor@flowdesk.com', 'role' => 'Supervisor'],
-            ['name' => 'Junaid', 'email' => 'junaid@flowdesk.com', 'role' => 'Admin'],
-            ['name' => 'Shahrukh', 'email' => 'shahrukh@flowdesk.com', 'role' => 'Admin'],
-            ['name' => 'Talha', 'email' => 'talha@flowdesk.com', 'role' => 'Admin'],
+            ['name' => 'Flowdesk Admin', 'email' => 'admin@flowdesk.com', 'role' => 'Staff'],
+            ['name' => 'Flowdesk Supervisor', 'email' => 'supervisor@flowdesk.com', 'role' => 'Staff'],
+            ['name' => 'Junaid', 'email' => 'junaid@flowdesk.com', 'role' => 'Staff'],
+            ['name' => 'Shahrukh', 'email' => 'shahrukh@flowdesk.com', 'role' => 'Staff'],
+            ['name' => 'Talha', 'email' => 'talha@flowdesk.com', 'role' => 'Staff'],
         ];
 
         foreach ($staffAccounts as $account) {
@@ -51,19 +63,24 @@ class LocalLoginAccountsSeeder extends Seeder
         $this->command?->info('    Password: '.self::PASSWORD);
         $this->command?->info('');
         $this->command?->info('  Staff → http://127.0.0.1:8000/staff/login');
-        $this->command?->info('    Email: admin@flowdesk.com (or junaid@flowdesk.com)');
-        $this->command?->info('    Password: '.self::PASSWORD);
+        $this->command?->info('    Email: staff@evergreen.com');
+        $this->command?->info('    Password: Evergreen@123');
     }
 
-    private function ensureStaffUser(Merchant $merchant, string $name, string $email, string $roleName): void
-    {
+    private function ensureStaffUser(
+        Merchant $merchant,
+        string $name,
+        string $email,
+        string $roleName,
+        string $password = self::PASSWORD,
+    ): void {
         $user = User::query()->firstOrCreate(
             ['email' => $email],
             [
                 'id' => Str::uuid()->toString(),
                 'name' => $name,
                 'merchant_id' => $merchant->id,
-                'password' => self::PASSWORD,
+                'password' => $password,
                 'status' => User::STATUS_VERIFIED,
                 'is_active' => true,
                 'email_verified_at' => now(),
@@ -73,7 +90,7 @@ class LocalLoginAccountsSeeder extends Seeder
         $user->forceFill([
             'name' => $name,
             'merchant_id' => $merchant->id,
-            'password' => self::PASSWORD,
+            'password' => $password,
             'status' => User::STATUS_VERIFIED,
             'is_active' => true,
             'email_verified_at' => $user->email_verified_at ?? now(),
@@ -86,6 +103,37 @@ class LocalLoginAccountsSeeder extends Seeder
 
         if ($role) {
             $user->assignRole($role);
+        }
+
+        $this->assignBusinessAndBranch($merchant, $user);
+    }
+
+    private function assignBusinessAndBranch(Merchant $merchant, User $user): void
+    {
+        $business = Business::query()
+            ->where('merchant_id', $merchant->id)
+            ->orderBy('name')
+            ->first();
+
+        $branch = Branch::query()
+            ->where('merchant_id', $merchant->id)
+            ->when($business, fn ($query) => $query->where('business_id', $business->id))
+            ->orderBy('name')
+            ->first()
+            ?? Branch::query()->where('merchant_id', $merchant->id)->orderBy('name')->first();
+
+        if ($business) {
+            BusinessUser::query()->firstOrCreate(
+                ['user_id' => $user->id, 'business_id' => $business->id],
+                ['id' => Str::uuid()->toString()],
+            );
+        }
+
+        if ($branch) {
+            BranchUser::query()->firstOrCreate(
+                ['user_id' => $user->id, 'branch_id' => $branch->id],
+                ['id' => Str::uuid()->toString()],
+            );
         }
     }
 }

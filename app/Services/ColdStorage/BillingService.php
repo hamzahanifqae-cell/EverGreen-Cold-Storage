@@ -103,6 +103,91 @@ class BillingService
     }
 
     /**
+     * Estimated rent for a posted return that has not been billed yet. Uses the
+     * same withdrawal preview rules as "Bill a withdrawal", without creating a bill.
+     */
+    public function estimateDispatchTotal(ColdStorageDispatch $dispatch, ?string $periodStart = null): float
+    {
+        $dispatch->loadMissing('lines.receiptItem.receipt');
+
+        if ($dispatch->status !== 'posted' || $dispatch->lines->isEmpty()) {
+            return 0.0;
+        }
+
+        if (ColdStorageBill::query()
+            ->where('dispatch_id', $dispatch->id)
+            ->whereIn('status', ['draft', 'posted'])
+            ->exists()) {
+            return 0.0;
+        }
+
+        $periodStart ??= $dispatch->lines
+            ->map(fn ($line) => $line->receiptItem?->receipt?->received_on)
+            ->filter()
+            ->min()
+            ?->toDateString();
+
+        $bill = new ColdStorageBill([
+            'merchant_id' => $dispatch->merchant_id,
+            'business_id' => $dispatch->business_id,
+            'branch_id' => $dispatch->branch_id,
+            'customer_id' => $dispatch->customer_id,
+            'dispatch_id' => $dispatch->id,
+            'period_start' => $periodStart ?? $dispatch->dispatched_on->toDateString(),
+            'period_end' => $dispatch->dispatched_on->toDateString(),
+            'charge_basis' => 'bag',
+            'charge_period' => 'daily',
+            'status' => 'draft',
+        ]);
+        $bill->setRelation('services', collect());
+
+        try {
+            return round((float) $this->preview($bill)['total'], 2);
+        } catch (ColdStorageException) {
+            return 0.0;
+        }
+    }
+
+    /**
+     * Create, post, and collect a withdrawal-scoped bill into cash in hand or bank.
+     */
+    public function billDispatchAndCollect(
+        ColdStorageDispatch $dispatch,
+        string $method,
+        ?string $actorId,
+        ?string $periodStart = null,
+    ): ColdStorageBill {
+        return DB::transaction(function () use ($dispatch, $method, $actorId, $periodStart): ColdStorageBill {
+            if ($dispatch->status !== 'posted') {
+                throw ColdStorageException::make('Only a posted withdrawal can be billed.');
+            }
+
+            if (ColdStorageBill::query()
+                ->where('dispatch_id', $dispatch->id)
+                ->whereIn('status', ['draft', 'posted'])
+                ->exists()) {
+                throw ColdStorageException::make('This withdrawal already has a storage bill.');
+            }
+
+            $account = $this->cashAccountForMethod($method);
+            $bill = $this->createDraftFromDispatch($dispatch, $actorId, $periodStart);
+            $posted = $this->post($bill, $actorId);
+
+            if ((float) $posted->due_amount > 0) {
+                $this->recordPayment(
+                    $posted,
+                    (float) $posted->due_amount,
+                    now()->toDateString(),
+                    $account,
+                    $actorId,
+                );
+            }
+
+            return $posted->refresh();
+        });
+    }
+
+    /**
      * @return array{
      *     lines: list<array<string, mixed>>,
      *     storage_total: float,
@@ -199,20 +284,85 @@ class BillingService
                 throw ColdStorageException::make('Only a posted storage bill can be cancelled.');
             }
 
-            if ((float) $bill->paid_amount > 0) {
-                throw ColdStorageException::make('Refund recorded payments before cancelling this bill.');
-            }
+            // Paid bills (including "Bill a withdrawal" collect-on-create) refund
+            // cash and reverse advance allocations before the bill is cancelled.
+            $this->refundBillCollections($bill, $actorId, $reason);
 
             $bill->update([
                 'status' => 'cancelled',
                 'cancelled_at' => now(),
                 'cancelled_by' => $actorId,
                 'cancellation_reason' => $reason,
+                'paid_amount' => 0,
                 'due_amount' => 0,
             ]);
 
+            // Withdrawal bills were created from a Return — restore that stock
+            // to the original chamber/location when the bill is cancelled.
+            if (filled($bill->dispatch_id)) {
+                $dispatch = ColdStorageDispatch::query()->whereKey($bill->dispatch_id)->first();
+
+                if ($dispatch?->isPosted()) {
+                    app(DispatchService::class)->reverseStockAndMarkCancelled($dispatch, $actorId, $reason);
+                }
+            }
+
             return $bill->refresh();
         });
+    }
+
+    /**
+     * Reverse advance allocations and refund direct payments so a paid bill can
+     * be cancelled. Cash is returned to the same account it was collected into.
+     */
+    private function refundBillCollections(ColdStorageBill $bill, ?string $actorId, string $reason): void
+    {
+        foreach ($bill->allocations()->whereNull('reversed_at')->lockForUpdate()->get() as $allocation) {
+            $this->reverseAllocation($allocation, $actorId, $reason);
+        }
+
+        $payments = $bill->payments()
+            ->where('entry_type', 'payment')
+            ->where('direction', 'in')
+            ->lockForUpdate()
+            ->get();
+
+        if ($payments->isEmpty()) {
+            $this->recomputeBillTotals($bill->refresh());
+
+            return;
+        }
+
+        $merchant = Merchant::query()->whereKey($bill->merchant_id)->lockForUpdate()->firstOrFail();
+        $accountDeltas = [];
+
+        foreach ($payments as $payment) {
+            $account = $this->cashAccountForMethod($payment->method);
+            $amount = round((float) $payment->amount, 2);
+            $accountDeltas[$account] = round(($accountDeltas[$account] ?? 0) + $amount, 2);
+
+            $bill->payments()->create([
+                'merchant_id' => $bill->merchant_id,
+                'party_type' => Customer::class,
+                'party_id' => $bill->customer_id,
+                'direction' => 'out',
+                'entry_type' => 'refund',
+                'amount' => $amount,
+                'payment_date' => now()->toDateString(),
+                'method' => $account,
+                'reference_no' => $bill->bill_no,
+                'notes' => 'Refund on cancel of cold storage bill '.$bill->bill_no.': '.$reason,
+                'created_by' => $actorId,
+            ]);
+        }
+
+        $updates = [];
+        foreach ($accountDeltas as $account => $amount) {
+            $updates[$account] = round((float) ($merchant->{$account} ?? 0) - $amount, 2);
+        }
+        $merchant->update($updates);
+
+        $this->recomputeBillTotals($bill->refresh());
     }
 
     public function recordPayment(ColdStorageBill $bill, float $amount, string $date, ?string $method, ?string $actorId): Payment
@@ -421,7 +571,7 @@ class BillingService
             throw ColdStorageException::make('A refund reason is required.');
         }
 
-        return DB::transaction(function () use ($advance, $amount, $actorId, $reason): Payment {
+        return DB::transaction(function () use ($advance, $amount, $reason): Payment {
             $advance = Payment::query()->whereKey($advance->id)->lockForUpdate()->firstOrFail();
             $amount = round($amount, 2);
 
@@ -450,15 +600,25 @@ class BillingService
 
     private function recomputeBillTotals(ColdStorageBill $bill): void
     {
+        $paymentNet = round((float) $bill->payments()
+            ->get()
+            ->sum(function (Payment $payment): float {
+                $amount = abs((float) $payment->amount);
+
+                return ($payment->entry_type === 'refund' || $payment->direction === 'out')
+                    ? -$amount
+                    : $amount;
+            }), 2);
+
         $paid = round(
-            (float) $bill->payments()->sum('amount')
+            $paymentNet
                 + (float) $bill->allocations()->whereNull('reversed_at')->sum('amount'),
             2
         );
 
         $bill->update([
-            'paid_amount' => $paid,
-            'due_amount' => round(max(0, (float) $bill->total_amount - $paid), 2),
+            'paid_amount' => max(0, $paid),
+            'due_amount' => round(max(0, (float) $bill->total_amount - max(0, $paid)), 2),
         ]);
     }
 
@@ -523,6 +683,9 @@ class BillingService
         $start = $bill->period_start->copy()->startOfDay();
         $end = $bill->period_end->copy()->startOfDay();
         $alreadyBilled = $this->alreadyBilledByDay($item, $start->toDateString(), $end->toDateString());
+        $alreadyBilledForDispatch = filled($bill->dispatch_id)
+            ? $this->alreadyBilledByDay($item, $start->toDateString(), $end->toDateString(), (string) $bill->dispatch_id)
+            : [];
         $segments = [];
 
         $dispatchLine = filled($bill->dispatch_id)
@@ -535,10 +698,23 @@ class BillingService
 
         for ($day = $start->copy(); $day->lte($end); $day->addDay()) {
             $dayKey = $day->toDateString();
-            $raw = $dispatchLine
-                ? $this->dispatchBillableQuantity($bill, $item, $movements, $day->copy(), $dispatchLine)
-                : $this->billableQuantity($bill, $item, $movements, $day->copy());
-            $quantity = Quantities::roundQuantity($raw - (float) ($alreadyBilled[$dayKey] ?? 0));
+            $already = (float) ($alreadyBilled[$dayKey] ?? 0);
+
+            if ($dispatchLine) {
+                // Charge this withdrawal's remaining unbilled bags, capped by the
+                // lot's capacity that day after other bills (period / other returns).
+                $dispatchQty = $this->dispatchBillableQuantity($bill, $item, $movements, $day->copy(), $dispatchLine);
+                $alreadyThisDispatch = (float) ($alreadyBilledForDispatch[$dayKey] ?? 0);
+                $alreadyOthers = max(0.0, $already - $alreadyThisDispatch);
+                $stockCapacity = $this->billableQuantity($bill, $item, $movements, $day->copy());
+                $quantity = Quantities::roundQuantity(min(
+                    max(0.0, $dispatchQty - $alreadyThisDispatch),
+                    max(0.0, $stockCapacity - $alreadyOthers),
+                ));
+            } else {
+                $raw = $this->billableQuantity($bill, $item, $movements, $day->copy());
+                $quantity = Quantities::roundQuantity($raw - $already);
+            }
 
             if ($quantity <= 0) {
                 continue;
@@ -607,19 +783,23 @@ class BillingService
     }
 
     /**
-     * Quantity already billed for this receipt item on each day, from any other bill
-     * still in posted status. Cancelling a bill drops its lines out of this lookup,
-     * which is what releases the entitlement it had claimed.
+     * Quantity already billed for this receipt item on each day, from posted bills.
+     * Pass $dispatchId to limit to entitlements claimed by that withdrawal's bills.
+     * Cancelling a bill drops its lines out of this lookup.
      *
      * @return array<string, float>
      */
-    private function alreadyBilledByDay(ColdStorageReceiptItem $item, string $from, string $to): array
+    private function alreadyBilledByDay(ColdStorageReceiptItem $item, string $from, string $to, ?string $dispatchId = null): array
     {
         return ColdStorageBilledEntitlement::query()
             ->join('cold_storage_bill_lines', 'cold_storage_bill_lines.id', '=', 'cold_storage_billed_entitlements.bill_line_id')
             ->join('cold_storage_bills', 'cold_storage_bills.id', '=', 'cold_storage_bill_lines.bill_id')
             ->where('cold_storage_billed_entitlements.receipt_item_id', $item->id)
             ->where('cold_storage_bills.status', 'posted')
+            ->when(
+                $dispatchId !== null,
+                fn ($query) => $query->where('cold_storage_bills.dispatch_id', $dispatchId),
+            )
             ->whereDate('cold_storage_billed_entitlements.occurred_on', '>=', $from)
             ->whereDate('cold_storage_billed_entitlements.occurred_on', '<=', $to)
             ->selectRaw('cold_storage_billed_entitlements.occurred_on as day, SUM(cold_storage_billed_entitlements.quantity) as qty')

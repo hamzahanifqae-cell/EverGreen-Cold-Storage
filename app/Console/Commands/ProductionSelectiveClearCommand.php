@@ -2,8 +2,10 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Merchant;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Clears all cold storage / transactional data from the database while
@@ -15,7 +17,9 @@ use Illuminate\Support\Facades\DB;
  */
 class ProductionSelectiveClearCommand extends Command
 {
-    protected $signature = 'app:production-selective-clear {--force : Skip the confirmation prompt}';
+    protected $signature = 'app:production-selective-clear
+                            {--force : Skip the confirmation prompt}
+                            {--allow-local : Allow running in the local environment}';
 
     protected $description = 'Clear all data except credentials, businesses, branches, products, and categories/brands';
 
@@ -41,8 +45,8 @@ class ProductionSelectiveClearCommand extends Command
 
     public function handle(): int
     {
-        if (app()->environment('local')) {
-            $this->error('Refusing to run against a local environment — this command is for production use only.');
+        if (app()->environment('local') && ! $this->option('allow-local')) {
+            $this->error('Refusing to run against a local environment without --allow-local.');
 
             return self::FAILURE;
         }
@@ -56,21 +60,54 @@ class ProductionSelectiveClearCommand extends Command
             return self::SUCCESS;
         }
 
-        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        $driver = DB::getDriverName();
+        $this->disableForeignKeyChecks($driver);
+
+        $cleared = 0;
 
         foreach ($this->tablesToClear as $table) {
-            if (! \Illuminate\Support\Facades\Schema::hasTable($table)) {
+            if (! Schema::hasTable($table)) {
                 continue;
             }
 
-            DB::table($table)->truncate();
+            if ($driver === 'sqlite') {
+                DB::table($table)->delete();
+            } else {
+                DB::table($table)->truncate();
+            }
+
+            $cleared++;
             $this->line("Cleared: {$table}");
         }
 
-        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        $this->enableForeignKeyChecks($driver);
 
-        $this->info('Done.');
+        $resetCash = Merchant::query()->update([
+            'cash_in_hand' => 0,
+            'cash_in_bank' => 0,
+        ]);
+
+        $this->line("Reset cash accounts on {$resetCash} merchant(s).");
+        $this->info("Done. Cleared {$cleared} tables.");
 
         return self::SUCCESS;
+    }
+
+    private function disableForeignKeyChecks(string $driver): void
+    {
+        match ($driver) {
+            'sqlite' => DB::statement('PRAGMA foreign_keys = OFF'),
+            'mysql', 'mariadb' => DB::statement('SET FOREIGN_KEY_CHECKS=0'),
+            default => null,
+        };
+    }
+
+    private function enableForeignKeyChecks(string $driver): void
+    {
+        match ($driver) {
+            'sqlite' => DB::statement('PRAGMA foreign_keys = ON'),
+            'mysql', 'mariadb' => DB::statement('SET FOREIGN_KEY_CHECKS=1'),
+            default => null,
+        };
     }
 }

@@ -4,8 +4,14 @@ Easy walkthrough for showing the product to a customer.
 
 ## Login
 
+### Merchant
 - **URL:** `/merchant/login`
 - **Email:** `info@evergreen.com`
+- **Password:** `Evergreen@123`
+
+### Staff
+- **URL:** `/staff/login`
+- **Email:** `staff@evergreen.com`
 - **Password:** `Evergreen@123`
 
 ## What this software is
@@ -74,20 +80,29 @@ It shows as out of range → appears on **Action alerts** → **Acknowledge** af
 
 Stock on hand drops. No sale invoice is created.
 
+Then bill the return from **Storage bills → Bill a withdrawal** (or **Bill this withdrawal** on the return):
+
+- Pick the posted return  
+- Choose **Cash in hand** or **Bank**  
+- The bill is created, posted, and the full rent is collected into that account  
+- Dashboard **Billing** / cash accounts update  
+
+If you **Cancel and reverse** the withdrawal bill (even after it was paid), rent is refunded to the same cash/bank account, the Return is cancelled, and stock goes back into the same chamber/location.
+
 ### 6) Damage / adjustment (optional)
 **Damage and adjustments**
 
 Record torn bags with a reason and negative quantity. Post it.
 
-### 7) Storage bill
+### 7) Storage bill (period / remaining stock)
 **Storage bills**
 
-- Use **Bill from stock** (fast), or Create manually  
+- Use for period rent on stock still in store (**Bill from stock**), or Create manually  
 - Choose customer, period, charge basis  
 - Open bill → **Calculation preview** → **Post**  
 - Record payment against due amount  
 
-Dashboard **Billing** card updates for that period.
+Use this for remaining lots or period catch-up; withdrawal rent is billed via **Bill a withdrawal**.
 
 ### 8) Extra modules to flash
 - **Lot ageing** — oldest lots still in store  

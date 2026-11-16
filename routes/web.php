@@ -13,7 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/merchant/login');
+Route::view('/', 'landing')->name('landing');
+Route::view('/how-it-works', 'how-it-works')->name('how-it-works');
 
 Route::get('/demo/login', DemoAccountController::class)->name('demo.login');
 Route::get('/demo/exit', DemoExitController::class)->name('demo.exit');

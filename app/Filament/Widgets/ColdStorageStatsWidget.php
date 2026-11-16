@@ -17,6 +17,7 @@ use App\Models\Merchant;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\ColdStorage\ActionAlertService;
+use App\Services\ColdStorage\BillingService;
 use App\Services\ColdStorage\OccupancyService;
 use App\Services\ColdStorage\ReportService;
 use App\Support\ColdStorageAccess;
@@ -24,6 +25,7 @@ use App\Support\UiModules;
 use Carbon\Carbon;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\Widget;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
 class ColdStorageStatsWidget extends Widget
@@ -133,6 +135,7 @@ class ColdStorageStatsWidget extends Widget
         $dueAmount = (float) (clone $billQuery)->sum('due_amount');
         $billedAmount = (float) (clone $billQuery)->sum('total_amount');
         $paidAmount = (float) (clone $billQuery)->sum('paid_amount');
+        $toCollectAmount = $this->unbilledReturnAmountToCollect($dispatchQuery, $filters);
         $receiptsPosted = (clone $receiptQuery)->where('status', 'posted')->count();
         $dispatchesPosted = (clone $dispatchQuery)->where('status', 'posted')->count();
         $receiptsDraft = (clone $receiptQuery)->where('status', 'draft')->count();
@@ -169,6 +172,7 @@ class ColdStorageStatsWidget extends Widget
                 'dispatch_packages' => $dispatchPackages,
                 'bills_due' => (clone $billQuery)->where('due_amount', '>', 0)->count(),
                 'due_amount' => $dueAmount,
+                'to_collect_amount' => $toCollectAmount,
                 'paid_amount' => $paidAmount,
                 'billed_amount' => $billedAmount,
                 'action_alerts_open' => $actionAlertsOpen,
@@ -219,6 +223,7 @@ class ColdStorageStatsWidget extends Widget
             'dispatch_packages' => 0.0,
             'bills_due' => 0,
             'due_amount' => 0.0,
+            'to_collect_amount' => 0.0,
             'paid_amount' => 0.0,
             'billed_amount' => 0.0,
             'action_alerts_open' => 0,
@@ -472,6 +477,33 @@ class ColdStorageStatsWidget extends Widget
                 $filters['date_to'],
                 fn ($q, $date) => $q->whereDate('period_start', '<=', $date),
             );
+    }
+
+    /**
+     * Rent still owed on posted returns that have no draft/posted storage bill yet.
+     *
+     * @param  Builder<ColdStorageDispatch>  $dispatchQuery
+     * @param  array{business_id: ?string, branch_id: ?string, chamber_id: ?string, date_from: ?string, date_to: ?string}  $filters
+     */
+    private function unbilledReturnAmountToCollect($dispatchQuery, array $filters): float
+    {
+        $unbilled = (clone $dispatchQuery)
+            ->where('status', 'posted')
+            ->whereDoesntHave('bills', fn ($query) => $query->whereIn('status', ['draft', 'posted']))
+            ->when($filters['date_from'] ?? null, fn ($query, $date) => $query->whereDate('dispatched_on', '>=', $date))
+            ->when($filters['date_to'] ?? null, fn ($query, $date) => $query->whereDate('dispatched_on', '<=', $date))
+            ->with(['lines.receiptItem.receipt'])
+            ->get();
+
+        if ($unbilled->isEmpty()) {
+            return 0.0;
+        }
+
+        $billing = app(BillingService::class);
+
+        return round($unbilled->sum(
+            fn (ColdStorageDispatch $dispatch): float => $billing->estimateDispatchTotal($dispatch)
+        ), 2);
     }
 
     /**

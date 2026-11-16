@@ -3,6 +3,7 @@
 namespace App\Filament\ColdStorage;
 
 use App\Exceptions\ColdStorageException;
+use App\Services\ColdStorage\BillingService;
 use App\Support\ColdStorageAccess;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
@@ -36,6 +37,14 @@ class ColdStorageActions
             ->label('Cancel and reverse')
             ->color('danger')
             ->visible(fn ($record): bool => ($record->status ?? null) === 'posted' && ColdStorageAccess::can('update'))
+            ->modalDescription(function ($record) use ($serviceClass): ?string {
+                if ($serviceClass === BillingService::class
+                    && (float) ($record->paid_amount ?? 0) > 0) {
+                    return 'Recorded payments will be refunded to Cash in hand or Bank, and any linked Return stock will be restored.';
+                }
+
+                return null;
+            })
             ->schema([
                 Textarea::make('reason')->label('Reason')->required()->rows(3)->columnSpanFull(),
             ])

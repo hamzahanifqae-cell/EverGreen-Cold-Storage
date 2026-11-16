@@ -58,10 +58,10 @@ class DiagnoseStaffAccessCommand extends Command
         }
 
         $this->newLine();
-        $admin = Role::query()->where('name', 'Admin')->where('guard_name', 'merchant')->first();
+        $staff = Role::query()->where('name', 'Staff')->where('guard_name', 'merchant')->first();
 
-        if ($admin) {
-            $this->line("Admin role currently has {$admin->permissions->count()} permissions.");
+        if ($staff) {
+            $this->line("Staff role currently has {$staff->permissions->count()} permissions.");
         }
 
         return self::SUCCESS;

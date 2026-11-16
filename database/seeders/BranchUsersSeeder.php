@@ -26,7 +26,7 @@ class BranchUsersSeeder extends Seeder
                     merchant: $primaryMerchant,
                     name: $branch->name.' Staff',
                     email: "branch{$index}@flowdesk.com",
-                    roleName: 'Data Entry',
+                    roleName: 'Staff',
                     branchId: $branch->id
                 );
             }
@@ -38,7 +38,7 @@ class BranchUsersSeeder extends Seeder
                     merchant: $primaryMerchant,
                     name: $branch->name.' Staff',
                     email: "branch{$index}@halaynoor.com",
-                    roleName: 'Data Entry',
+                    roleName: 'Staff',
                     branchId: $branch->id
                 );
             }

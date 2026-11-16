@@ -168,19 +168,19 @@
                         <p class="text-sm font-semibold text-slate-900 dark:text-slate-100">Billing</p>
                         <span class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 dark:bg-amber-900/40 dark:text-amber-200">Charges</span>
                     </div>
-                    <p class="mt-4 text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ $currency }} {{ number_format((float) ($stats['due_amount'] ?? 0), 2) }}</p>
+                    <p class="mt-4 text-2xl font-semibold text-slate-900 dark:text-slate-100">{{ $currency }} {{ number_format((float) ($stats['billed_amount'] ?? 0), 2) }}</p>
                     <div class="mt-4 space-y-2 text-sm text-slate-700 dark:text-slate-300">
                         <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
-                            <span class="whitespace-nowrap">Bills with balance</span>
-                            <span class="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{{ number_format($stats['bills_due'] ?? 0) }}</span>
+                            <span class="whitespace-nowrap">Amount to be collected</span>
+                            <span class="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{{ $currency }} {{ number_format((float) ($stats['to_collect_amount'] ?? 0), 2) }}</span>
                         </div>
                         <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
                             <span class="whitespace-nowrap">Collected</span>
                             <span class="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{{ $currency }} {{ number_format((float) ($stats['paid_amount'] ?? 0), 2) }}</span>
                         </div>
                         <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
-                            <span class="whitespace-nowrap">Billed amount</span>
-                            <span class="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{{ $currency }} {{ number_format((float) ($stats['billed_amount'] ?? 0), 2) }}</span>
+                            <span class="whitespace-nowrap">Bills with balance</span>
+                            <span class="whitespace-nowrap font-medium text-slate-900 dark:text-slate-100">{{ number_format($stats['bills_due'] ?? 0) }}</span>
                         </div>
                     </div>
                 </div>

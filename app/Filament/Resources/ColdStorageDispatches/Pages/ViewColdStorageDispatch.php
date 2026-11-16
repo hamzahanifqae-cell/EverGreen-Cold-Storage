@@ -11,6 +11,7 @@ use App\Services\ColdStorage\BillingService;
 use App\Services\ColdStorage\DispatchService;
 use App\Support\ColdStorageAccess;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -36,13 +37,41 @@ class ViewColdStorageDispatch extends ViewRecord
             ->color('success')
             ->visible(fn (): bool => $this->record->status === 'posted'
                 && ColdStorageAccess::can('create')
-                && ! ColdStorageBill::query()->where('dispatch_id', $this->record->id)->exists())
-            ->requiresConfirmation()
-            ->modalDescription('This creates a draft storage bill scoped to this withdrawal\'s lots only, not the customer\'s full stock. You can still preview and adjust it before posting.')
-            ->action(function (BillingService $billing): void {
+                && ! ColdStorageBill::query()
+                    ->where('dispatch_id', $this->record->id)
+                    ->whereIn('status', ['draft', 'posted'])
+                    ->exists())
+            ->modalHeading('Bill this withdrawal')
+            ->modalDescription('Creates and posts a storage bill for this return, then records the full amount into cash in hand or bank.')
+            ->schema([
+                Select::make('method')
+                    ->label('Receive payment into')
+                    ->options([
+                        'cash_in_hand' => 'Cash in hand',
+                        'cash_in_bank' => 'Bank',
+                    ])
+                    ->required()
+                    ->default('cash_in_hand')
+                    ->helperText('The billed rent is posted and collected into this account.'),
+            ])
+            ->action(function (array $data, BillingService $billing): void {
                 try {
-                    $bill = $billing->createDraftFromDispatch($this->record, ColdStorageAccess::actorId());
-                    Notification::make()->title('Draft bill created for this withdrawal')->success()->send();
+                    $bill = $billing->billDispatchAndCollect(
+                        $this->record,
+                        (string) $data['method'],
+                        ColdStorageAccess::actorId(),
+                    );
+
+                    $accountLabel = $billing->cashAccountForMethod((string) $data['method']) === 'cash_in_bank'
+                        ? 'Bank'
+                        : 'Cash in hand';
+
+                    Notification::make()
+                        ->title('Withdrawal billed and collected')
+                        ->body('Total '.config('cold-storage.currency').' '.number_format((float) $bill->total_amount, 2).' recorded to '.$accountLabel.'.')
+                        ->success()
+                        ->send();
+
                     $this->redirect(ColdStorageBillResource::getUrl('view', ['record' => $bill]));
                 } catch (ColdStorageException $exception) {
                     Notification::make()->title('Could not create bill')->body($exception->getMessage())->danger()->send();

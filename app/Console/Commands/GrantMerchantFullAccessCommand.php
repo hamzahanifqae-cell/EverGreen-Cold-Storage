@@ -3,6 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\Merchant;
+use App\Models\Permission;
+use App\Models\PermissionModule;
+use App\Models\Role;
 use App\Services\Demo\DemoMerchantAccess;
 use Database\Seeders\PermissionsModulesSeeder;
 use Database\Seeders\PermissionsSeeder;
@@ -15,7 +18,7 @@ class GrantMerchantFullAccessCommand extends Command
                             {email : Merchant email address}
                             {--password= : Set or reset the merchant password}';
 
-    protected $description = 'Grant a merchant the Admin role, all permission modules, and all merchant-guard permissions';
+    protected $description = 'Grant a merchant the Staff role, all permission modules, and all merchant-guard permissions';
 
     public function handle(DemoMerchantAccess $demoMerchantAccess): int
     {
@@ -56,17 +59,17 @@ class GrantMerchantFullAccessCommand extends Command
 
     private function ensurePermissionCatalogExists(): void
     {
-        if (\App\Models\Permission::query()->where('guard_name', 'merchant')->doesntExist()) {
+        if (Permission::query()->where('guard_name', 'merchant')->doesntExist()) {
             $this->components->warn('Seeding permissions catalog…');
             (new PermissionsSeeder)->run();
         }
 
-        if (\App\Models\Role::query()->where('guard_name', 'merchant')->doesntExist()) {
+        if (Role::query()->where('guard_name', 'merchant')->doesntExist()) {
             $this->components->warn('Seeding merchant roles…');
             (new RolesSeeder)->run();
         }
 
-        if (\App\Models\PermissionModule::query()->doesntExist()) {
+        if (PermissionModule::query()->doesntExist()) {
             $this->components->warn('Seeding permission modules…');
             (new PermissionsModulesSeeder)->run();
         }

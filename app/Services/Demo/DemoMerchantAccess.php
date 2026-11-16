@@ -19,7 +19,7 @@ class DemoMerchantAccess
     {
         $this->ensurePermissionCatalogExists();
         $this->syncAllPermissionModules($merchant);
-        $this->assignAdminRoleWithAllPermissions($merchant);
+        $this->assignStaffRoleWithAllPermissions($merchant);
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
@@ -74,10 +74,10 @@ class DemoMerchantAccess
         }
     }
 
-    private function assignAdminRoleWithAllPermissions(Merchant $merchant): void
+    private function assignStaffRoleWithAllPermissions(Merchant $merchant): void
     {
         $role = Role::query()->firstOrCreate(
-            ['name' => 'Admin', 'guard_name' => 'merchant'],
+            ['name' => 'Staff', 'guard_name' => 'merchant'],
             ['id' => Str::uuid()->toString()]
         );
 
@@ -85,15 +85,8 @@ class DemoMerchantAccess
             ->where('guard_name', 'merchant')
             ->pluck('name');
 
-        // Only seed the Admin role's permissions the first time it's created.
-        // This method runs on every boot to heal newly added permission
-        // modules; the role itself is editable afterwards through the
-        // Roles & Permissions UI, so resyncing it unconditionally here
-        // would silently wipe out any customization on every deploy.
-        if ($role->wasRecentlyCreated && $permissionNames->isNotEmpty()) {
-            $role->syncPermissions($permissionNames);
-        }
-
+        // Merchant keeps full direct permissions. Staff role stays cold-storage
+        // scoped and is managed via RolesSeeder / the Roles UI — do not expand it here.
         if ($permissionNames->isNotEmpty()) {
             $merchant->syncPermissions($permissionNames);
         }

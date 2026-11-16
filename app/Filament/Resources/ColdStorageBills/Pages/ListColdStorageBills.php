@@ -98,7 +98,7 @@ class ListColdStorageBills extends ListRecords
                 ->icon('heroicon-o-receipt-percent')
                 ->color('success')
                 ->modalHeading('Bill a returned withdrawal')
-                ->modalDescription('Creates a draft bill scoped to one withdrawal\'s lots only — charges exactly what was returned, even if it left the same day it arrived, not the customer\'s full stock.')
+                ->modalDescription('After a Return is posted, create and post a storage bill for that withdrawal, then collect the full amount into cash in hand or bank.')
                 ->modalWidth('lg')
                 ->visible(fn (): bool => ColdStorageAccess::can('create'))
                 ->schema([
@@ -109,7 +109,9 @@ class ListColdStorageBills extends ListRecords
                             ->whereNotExists(fn ($query) => $query
                                 ->selectRaw('1')
                                 ->from('cold_storage_bills')
-                                ->whereColumn('cold_storage_bills.dispatch_id', 'cold_storage_dispatches.id'))
+                                ->whereColumn('cold_storage_bills.dispatch_id', 'cold_storage_dispatches.id')
+                                ->whereIn('cold_storage_bills.status', ['draft', 'posted'])
+                                ->whereNull('cold_storage_bills.deleted_at'))
                             ->with('customer')
                             ->latest('dispatched_on')
                             ->get()
@@ -119,20 +121,35 @@ class ListColdStorageBills extends ListRecords
                             ->all())
                         ->searchable()
                         ->required()
-                        ->helperText('Only posted withdrawals that don\'t already have a bill are listed.'),
+                        ->helperText('Only posted returns that do not already have a draft or posted bill are listed.'),
+                    Select::make('method')
+                        ->label('Receive payment into')
+                        ->options([
+                            'cash_in_hand' => 'Cash in hand',
+                            'cash_in_bank' => 'Bank',
+                        ])
+                        ->required()
+                        ->default('cash_in_hand')
+                        ->helperText('The billed rent is posted and collected into this account.'),
                 ])
                 ->action(function (array $data, BillingService $billing): void {
                     try {
                         $dispatch = ColdStorageAccess::scope(ColdStorageDispatch::query())->findOrFail($data['dispatch_id']);
-                        $bill = $billing->createDraftFromDispatch($dispatch, ColdStorageAccess::actorId());
-                        $preview = $billing->preview($bill);
+                        $bill = $billing->billDispatchAndCollect(
+                            $dispatch,
+                            (string) $data['method'],
+                            ColdStorageAccess::actorId(),
+                        );
+
+                        $accountLabel = $billing->cashAccountForMethod((string) $data['method']) === 'cash_in_bank'
+                            ? 'Bank'
+                            : 'Cash in hand';
 
                         Notification::make()
-                            ->title('Draft bill created for this withdrawal')
+                            ->title('Withdrawal billed and collected')
                             ->body(
-                                $preview['lines'] === []
-                                    ? 'Open the bill to review — no billable quantity was found.'
-                                    : 'Estimated total '.number_format($preview['total'], 2).' '.config('cold-storage.currency')
+                                'Total '.config('cold-storage.currency').' '.number_format((float) $bill->total_amount, 2)
+                                .' recorded to '.$accountLabel.'.'
                             )
                             ->success()
                             ->send();

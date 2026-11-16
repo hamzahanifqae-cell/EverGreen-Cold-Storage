@@ -68,6 +68,7 @@ class RentCollectionRegisterService
 
         $dispatchScopedBills = ColdStorageBill::query()
             ->whereIn('dispatch_id', $dispatches->pluck('id'))
+            ->where('status', 'posted')
             ->with(['lines', 'payments'])
             ->get()
             ->keyBy('dispatch_id');
