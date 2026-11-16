@@ -37,7 +37,7 @@ class DomainConfig
             return false;
         }
 
-        // Exact match only — www is the CRM host when APP_DOMAIN=www.evergreencold.store.
+        // Exact match only (CRM host is APP_DOMAIN, e.g. app.evergreencold.store).
         return self::normalizeHost($host) === $landing;
     }
 

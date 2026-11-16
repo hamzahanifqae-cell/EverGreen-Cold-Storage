@@ -5,11 +5,26 @@
 | Host | Role |
 |------|------|
 | `https://evergreencold.store` | Landing / marketing only |
-| `https://www.evergreencold.store` | Full Laravel CRM |
-| Existing primary domain `public_html` | WordPress — **do not touch** |
+| `https://app.evergreencold.store` | Full Laravel CRM |
+| Existing primary domain `public_html` | WordPress (`techshaker.com`) — **do not touch** |
+
+Do **not** create a separate `www.evergreencold.store` domain on this host (cPanel rejects `www.` and it can break the main domain).
 
 GitHub repo: `https://github.com/hamzahanifqae-cell/EverGreen-Cold-Storage.git`  
 Branch: `main`
+
+### Discovered cPanel account (`techshakerco99`)
+
+| Item | Value |
+|------|--------|
+| Home | `/home/techshakerco99` |
+| Primary / WordPress | `/home/techshakerco99/public_html` (`wp-config.php`, `techshaker.com`) |
+| Existing Laravel (pattern to copy) | `/home/techshakerco99/public_html/flowdeskpos.com` |
+| Other addon folders under `public_html` | `toolmetric.online`, `time-atlas.online`, `texthelper.online`, `gamenews.online`, `api.toolmetric.online` |
+| PHP for EverGreen | `/opt/cpanel/ea-php84/root/usr/bin/php` (8.4) — also have 8.2/8.3 |
+| Composer | `/home/techshakerco99/composer.phar` (not on PATH as `composer`) |
+| EverGreen CRM path | `/home/techshakerco99/public_html/app.evergreencold.store` |
+| EverGreen landing path | `/home/techshakerco99/public_html/evergreencold.store` |
 
 ---
 

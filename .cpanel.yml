@@ -1,21 +1,14 @@
 ---
 deployment:
   tasks:
-    # Repo path should be the CRM install (www.evergreencold.store). Paths use $HOME
-    # so this works without hard-coding the cPanel username.
-    - export APP_DIR="$(pwd)"
+    # CRM lives at public_html/app.evergreencold.store (cPanel user: techshakerco99).
+    # Git Version Control clone path should be that directory.
+    - export APP_DIR="/home/techshakerco99/public_html/app.evergreencold.store"
     - export PHP_BIN="/opt/cpanel/ea-php84/root/usr/bin/php"
+    - export COMPOSER_BIN="/home/techshakerco99/composer.phar"
     - |
-      if [ ! -x "$PHP_BIN" ]; then
-        for candidate in /opt/cpanel/ea-php83/root/usr/bin/php /opt/cpanel/ea-php82/root/usr/bin/php "$(command -v php)"; do
-          if [ -x "$candidate" ]; then PHP_BIN="$candidate"; break; fi
-        done
-      fi
-    - |
-      if command -v composer >/dev/null 2>&1; then
-        composer install --no-dev --optimize-autoloader --no-interaction
-      elif [ -x "$HOME/bin/composer" ]; then
-        "$HOME/bin/composer" install --no-dev --optimize-autoloader --no-interaction
+      if [ -f "$COMPOSER_BIN" ]; then
+        "$PHP_BIN" "$COMPOSER_BIN" install --working-dir="$APP_DIR" --no-dev --optimize-autoloader --no-interaction
       fi
     - "$PHP_BIN" "$APP_DIR/artisan" migrate --force
     - "$PHP_BIN" "$APP_DIR/artisan" storage:link 2>/dev/null || true

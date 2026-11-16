@@ -10,17 +10,17 @@ class DomainSplitTest extends TestCase
     {
         // Set before app boot so Filament panel ->domain() sees APP_DOMAIN.
         putenv('LANDING_DOMAIN=evergreencold.store');
-        putenv('APP_DOMAIN=www.evergreencold.store');
+        putenv('APP_DOMAIN=app.evergreencold.store');
         putenv('LANDING_URL=https://evergreencold.store');
-        putenv('APP_URL=https://www.evergreencold.store');
+        putenv('APP_URL=https://app.evergreencold.store');
         $_ENV['LANDING_DOMAIN'] = 'evergreencold.store';
-        $_ENV['APP_DOMAIN'] = 'www.evergreencold.store';
+        $_ENV['APP_DOMAIN'] = 'app.evergreencold.store';
         $_ENV['LANDING_URL'] = 'https://evergreencold.store';
-        $_ENV['APP_URL'] = 'https://www.evergreencold.store';
+        $_ENV['APP_URL'] = 'https://app.evergreencold.store';
         $_SERVER['LANDING_DOMAIN'] = 'evergreencold.store';
-        $_SERVER['APP_DOMAIN'] = 'www.evergreencold.store';
+        $_SERVER['APP_DOMAIN'] = 'app.evergreencold.store';
         $_SERVER['LANDING_URL'] = 'https://evergreencold.store';
-        $_SERVER['APP_URL'] = 'https://www.evergreencold.store';
+        $_SERVER['APP_URL'] = 'https://app.evergreencold.store';
 
         parent::setUp();
     }
@@ -46,21 +46,21 @@ class DomainSplitTest extends TestCase
             ->assertSee('How EverGreen works');
     }
 
-    public function test_apex_redirects_crm_paths_to_www(): void
+    public function test_apex_redirects_crm_paths_to_app_host(): void
     {
         $this->get('http://evergreencold.store/merchant/login')
-            ->assertRedirect('https://www.evergreencold.store/merchant/login');
+            ->assertRedirect('https://app.evergreencold.store/merchant/login');
     }
 
-    public function test_www_root_redirects_to_merchant_login(): void
+    public function test_app_root_redirects_to_merchant_login(): void
     {
-        $this->get('http://www.evergreencold.store/')
+        $this->get('http://app.evergreencold.store/')
             ->assertRedirect('/merchant/login');
     }
 
-    public function test_www_how_it_works_redirects_to_apex(): void
+    public function test_app_how_it_works_redirects_to_apex(): void
     {
-        $this->get('http://www.evergreencold.store/how-it-works')
+        $this->get('http://app.evergreencold.store/how-it-works')
             ->assertRedirect('https://evergreencold.store/how-it-works');
     }
 }

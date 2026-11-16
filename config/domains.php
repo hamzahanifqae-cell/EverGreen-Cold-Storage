@@ -7,9 +7,9 @@ return [
     | Split landing / app hosts (cPanel)
     |--------------------------------------------------------------------------
     |
-    | Production split for EverGreen:
+    | Production split for EverGreen (cPanel):
     | - LANDING_DOMAIN=evergreencold.store     → marketing landing only
-    | - APP_DOMAIN=www.evergreencold.store     → full CRM (merchant + staff)
+    | - APP_DOMAIN=app.evergreencold.store     → full CRM (merchant + staff)
     | Leave blank locally so a single host continues to serve everything.
     |
     */
