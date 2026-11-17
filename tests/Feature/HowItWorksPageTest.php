@@ -10,7 +10,7 @@ class HowItWorksPageTest extends TestCase
     {
         $this->get(route('how-it-works'))
             ->assertOk()
-            ->assertSee('How EverGreen works')
+            ->assertSee('How Cold Storage CRM')
             ->assertSee('From the door to payment')
             ->assertSee('Take goods in')
             ->assertSee('Take payment')
@@ -23,21 +23,18 @@ class HowItWorksPageTest extends TestCase
             ->assertOk()
             ->assertSee(route('how-it-works', absolute: false), false)
             ->assertSee('How it works')
-            ->assertDontSee('Merchant login')
-            ->assertDontSee('Open merchant panel')
-            ->assertDontSee('Sign in to EverGreen')
-            ->assertSee('data-lang-toggle', false)
-            ->assertSee('اردو');
+            ->assertDontSee('EverGreen');
     }
 
-    public function test_how_it_works_page_includes_language_toggle(): void
+    public function test_marketing_pages_only_offer_the_demo_not_merchant_login(): void
     {
-        $this->get(route('how-it-works'))
-            ->assertOk()
-            ->assertSee('data-lang-toggle', false)
-            ->assertSee('اردو')
-            ->assertDontSee('Merchant login')
-            ->assertDontSee('Open merchant panel')
-            ->assertDontSee('Sign in to EverGreen');
+        foreach (['landing', 'how-it-works'] as $page) {
+            $this->get(route($page))
+                ->assertOk()
+                ->assertSee('/demo/login', false)
+                ->assertDontSee('/merchant/login', false)
+                ->assertDontSee('Log in')
+                ->assertDontSee('EverGreen');
+        }
     }
 }

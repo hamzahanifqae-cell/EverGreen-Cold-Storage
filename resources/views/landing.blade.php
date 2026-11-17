@@ -1,319 +1,353 @@
-<!DOCTYPE html>
-<html lang="en" data-lang="en" dir="ltr">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>EverGreen Cold Storage</title>
-    <meta name="description" content="EverGreen Cold Storage — merchant panel for cold stores: goods receipts, returns, storage bills, cash in hand or bank, chamber occupancy, and action alerts.">
-    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=bricolage-grotesque:650,700,760|manrope:400,600,700|noto-sans-arabic:400,500,600,700" rel="stylesheet">
-    <script>
-        (() => {
-            try {
-                const storedTheme = localStorage.getItem('evergreen-landing-theme');
-                const theme = storedTheme === 'light' || storedTheme === 'dark'
-                    ? storedTheme
-                    : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-                document.documentElement.setAttribute('data-theme', theme);
+@php
+    use App\Support\DomainConfig;
 
-                const storedLang = localStorage.getItem('evergreen-landing-lang');
-                const lang = storedLang === 'ur' ? 'ur' : 'en';
-                document.documentElement.setAttribute('data-lang', lang);
-                document.documentElement.setAttribute('lang', lang === 'ur' ? 'ur' : 'en');
-                document.documentElement.setAttribute('dir', lang === 'ur' ? 'rtl' : 'ltr');
-            } catch (_) {
-                document.documentElement.setAttribute('data-theme', 'light');
-                document.documentElement.setAttribute('data-lang', 'en');
-                document.documentElement.setAttribute('lang', 'en');
-                document.documentElement.setAttribute('dir', 'ltr');
-            }
-        })();
-    </script>
-    @vite(['resources/css/landing.css', 'resources/js/landing.js'])
-</head>
-<body class="landing-body" data-landing-page="landing">
-    <div class="landing">
-        <header class="landing-nav-wrap">
-            <div class="landing-shell landing-nav">
-                <a class="landing-brand" href="{{ url('/') }}" data-i18n-aria="nav.home" aria-label="EverGreen Cold Storage home">
-                    <img class="landing-brand-logo-light" src="{{ asset('images/evergreen-logo.svg') }}" alt="EverGreen Cold Storage">
-                    <img class="landing-brand-logo-dark" src="{{ asset('images/evergreen-logo-dark.svg') }}" alt="EverGreen Cold Storage">
-                </a>
-                <div class="landing-nav-actions">
-                    <button
-                        type="button"
-                        class="landing-lang-toggle"
-                        data-lang-toggle
-                        aria-label="Switch to Urdu"
-                        aria-pressed="false"
-                        title="Switch to Urdu"
-                    >
-                        <span data-i18n="lang.label">اردو</span>
-                    </button>
-                    <button
-                        type="button"
-                        class="landing-theme-toggle"
-                        data-theme-toggle
-                        aria-label="Switch to dark mode"
-                        aria-pressed="false"
-                        title="Switch to dark mode"
-                    >
-                        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                            <path d="M21 14.3A8.2 8.2 0 0 1 9.7 3 7.4 7.4 0 1 0 21 14.3Z" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                            <circle cx="12" cy="12" r="4"/>
-                            <path d="M12 2.5v2.2M12 19.3v2.2M4.7 4.7l1.6 1.6M17.7 17.7l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.7 19.3l1.6-1.6M17.7 6.3l1.6-1.6" stroke-linecap="round"/>
-                        </svg>
-                    </button>
-                    <a class="landing-nav-cta" href="{{ route('how-it-works') }}" data-i18n="nav.how">How it works</a>
+    // The merchant panel lives on the app host when the domains are split.
+    $appBase = DomainConfig::splitEnabled() ? DomainConfig::appUrl() : url('');
+    $demoUrl = $appBase.'/demo/login';
+@endphp
+
+@extends('landing.layout')
+
+@section('title', 'Cold Storage CRM — Run your cold store from receipt to rent')
+@section('description', 'Cold Storage CRM is the merchant panel for cold stores: goods receipts, returns, storage billing, cash in hand or bank, chamber occupancy, temperature readings and action alerts.')
+
+@section('content')
+<main>
+    {{-- Hero --}}
+    <section class="cs-hero">
+        <div class="cs-hero-frost" aria-hidden="true"></div>
+        <canvas class="cs-snow" data-snow aria-hidden="true"></canvas>
+        <div class="cs-shell cs-hero-grid">
+            <div class="cs-hero-copy" data-hero-in>
+                <p class="cs-pill"><span class="cs-dot"></span> Cold storage management software</p>
+                <h1>Track every lot from <em>receipt</em> to <em>rent collection</em>.</h1>
+                <p class="cs-lead">
+                    Cold Storage CRM is the merchant panel for cold stores. Receive customers' goods into a chamber,
+                    see exactly where they sit, hand them back on request, and bill storage rent into cash in hand or bank.
+                </p>
+                <div class="cs-actions">
+                    <a class="cs-btn cs-btn-primary cs-btn-lg" href="{{ $demoUrl }}">Try the live demo</a>
+                    <a class="cs-btn cs-btn-ghost cs-btn-lg" href="{{ route('how-it-works') }}">See how it works</a>
                 </div>
+                <ul class="cs-hero-points">
+                    <li>No sign-up for the demo</li>
+                    <li>Printable ledgers &amp; registers</li>
+                    <li>Per-lot stock safety checks</li>
+                </ul>
             </div>
-        </header>
 
-        <main>
-            <section class="landing-hero">
-                <canvas class="landing-frost" data-frost aria-hidden="true"></canvas>
-                <div class="landing-mist-floor" aria-hidden="true">
-                    <span class="landing-mist-band landing-mist-band-1"></span>
-                    <span class="landing-mist-band landing-mist-band-2"></span>
-                    <span class="landing-mist-band landing-mist-band-3"></span>
-                </div>
-                <div class="landing-shell landing-hero-inner">
-                    <div class="landing-hero-grid">
-                        <div class="landing-hero-copy" data-hero-copy>
-                            <p class="landing-kicker">
-                                EverGreen
-                                <span data-i18n="hero.tag">COLD STORAGE</span>
-                            </p>
-                            <h1 class="landing-headline" data-i18n="hero.headline">Receive goods. Track stock. Return and collect rent.</h1>
-                            <p class="landing-lead" data-i18n="hero.lead">
-                                EverGreen is a merchant panel for cold stores. Customers keep their own goods with you — you receive them into a chamber, track where they sit, hand them back when asked, and charge storage rent. It is not a normal shop POS.
-                            </p>
+            {{-- 3D product scene (illustrative sample data) --}}
+            <div class="cs-scene" data-scene aria-hidden="true">
+                <div class="cs-scene-rig" data-rig>
+                    <div class="cs-scene-glow"></div>
+
+                    <div class="cs-mock">
+                        <div class="cs-mock-bar">
+                            <span></span><span></span><span></span>
+                            <p>Dashboard</p>
+                            <em class="cs-live"><i></i> Live</em>
                         </div>
-
-                        <div class="landing-stage" data-stage aria-hidden="true">
-                            <div class="landing-stage-glow"></div>
-                            <div class="landing-flow-board" data-chamber data-active-step="0">
-                                <div class="landing-flow-board-face">
-                                    <div class="landing-flow-board-top">
-                                        <p class="landing-flow-board-eyebrow" data-i18n="hero.visual.eyebrow">Cold storage flow</p>
-                                    </div>
-                                    <div class="landing-flow-board-chamber">
-                                        <span class="landing-flow-board-rack"></span>
-                                        <span class="landing-flow-board-rack"></span>
-                                        <span class="landing-flow-board-rack"></span>
-                                        <span class="landing-flow-board-lot landing-flow-board-lot-a"></span>
-                                        <span class="landing-flow-board-lot landing-flow-board-lot-b"></span>
-                                        <span class="landing-flow-board-lot landing-flow-board-lot-c"></span>
-                                    </div>
-                                    <p class="landing-flow-board-status" data-flow-status data-i18n="hero.visual.1">Receive goods into a chamber — stock appears after post.</p>
-                                    <ol class="landing-flow-cycle" data-flow-cycle>
-                                        <li class="landing-flow-node is-active" data-flow-step="0">
-                                            <span class="landing-flow-node-num">01</span>
-                                            <span class="landing-flow-node-label" data-i18n="flow.1.title">Receive</span>
-                                        </li>
-                                        <li class="landing-flow-node" data-flow-step="1">
-                                            <span class="landing-flow-node-num">02</span>
-                                            <span class="landing-flow-node-label" data-i18n="flow.2.title">Store</span>
-                                        </li>
-                                        <li class="landing-flow-node" data-flow-step="2">
-                                            <span class="landing-flow-node-num">03</span>
-                                            <span class="landing-flow-node-label" data-i18n="flow.3.title">Return</span>
-                                        </li>
-                                        <li class="landing-flow-node" data-flow-step="3">
-                                            <span class="landing-flow-node-num">04</span>
-                                            <span class="landing-flow-node-label" data-i18n="flow.4.title">Bill &amp; collect</span>
-                                        </li>
-                                    </ol>
-                                    <div class="landing-flow-path" aria-hidden="true">
-                                        <span class="landing-flow-token" data-flow-token></span>
-                                    </div>
+                        <div class="cs-mock-body">
+                            <div class="cs-mock-kpis cs-z1">
+                                <div><small>In store</small><strong data-count="12480">12,480</strong><em>packages</em></div>
+                                <div><small>Rent due</small><strong>Rs <span data-count="386">386</span>k</strong>
+                                    <svg class="cs-spark" viewBox="0 0 80 22" preserveAspectRatio="none"><path d="M0 18 L10 15 L20 16 L30 11 L40 13 L50 8 L60 9 L70 4 L80 5"/></svg>
                                 </div>
+                                <div><small>Alerts</small><strong class="is-warn">2</strong><em>need action</em></div>
+                            </div>
+                            <p class="cs-mock-label">Chamber occupancy</p>
+                            <ul class="cs-mock-chambers cs-z2">
+                                <li><span>Chamber A</span><b style="--fill: 86%"></b><i data-temp="-18">-18.0°C</i></li>
+                                <li><span>Chamber B</span><b style="--fill: 64%"></b><i data-temp="2">2.0°C</i></li>
+                                <li><span>Chamber C</span><b style="--fill: 41%"></b><i data-temp="4">4.0°C</i></li>
+                                <li><span>Chamber D</span><b style="--fill: 93%" class="is-full"></b><i data-temp="-22">-22.0°C</i></li>
+                            </ul>
+                            <div class="cs-mock-feed cs-z3" data-feed>
+                                <p><span class="cs-tag cs-tag-in">IN</span> Goods receipt · 240 bags · Chamber A</p>
+                                <p><span class="cs-tag cs-tag-out">OUT</span> Return · 60 bags · Chamber B</p>
+                                <p><span class="cs-tag cs-tag-bill">BILL</span> Withdrawal billed · paid to bank</p>
                             </div>
                         </div>
                     </div>
-                </div>
-            </section>
 
-            <section id="about" class="landing-band">
-                <div class="landing-shell landing-section">
-                    <div class="landing-about">
-                        <div class="landing-section-head landing-reveal" data-reveal>
-                            <p class="landing-eyebrow" data-i18n="about.eyebrow">Product</p>
-                            <h2 data-i18n="about.title">Built for cold stores, not retail POS.</h2>
-                            <p data-i18n="about.copy">
-                                EverGreen is a merchant panel for cold stores. Customers keep their own goods with you (bags, crates, weight). You receive goods into a chamber, track where they sit, return them when the customer asks, and charge storage rent and collect payment.
-                            </p>
+                    {{-- Floating 3D cards --}}
+                    <div class="cs-float cs-float-temp">
+                        <svg class="cs-gauge" viewBox="0 0 44 44">
+                            <circle cx="22" cy="22" r="18" class="cs-gauge-track"/>
+                            <circle cx="22" cy="22" r="18" class="cs-gauge-fill"/>
+                        </svg>
+                        <div>
+                            <small>Chamber A</small>
+                            <strong data-temp="-18">-18.0°C</strong>
+                            <em><i></i> Stable</em>
                         </div>
-                        <aside class="landing-about-panel landing-reveal" data-reveal>
-                            <p class="landing-about-label" data-i18n="about.label">Customer-owned storage</p>
-                            <p data-i18n="about.aside">
-                                Goods stay customer-owned until they leave. Your team posts goods receipts, returns, transfers, and damage adjustments. Cold storage movements never create classic sales or purchases product stock.
-                            </p>
-                        </aside>
+                    </div>
+
+                    <div class="cs-float cs-float-pay">
+                        <span class="cs-float-check">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"/></svg>
+                        </span>
+                        <div>
+                            <small>Payment received</small>
+                            <strong>Rs 24,500 → Bank</strong>
+                        </div>
+                    </div>
+
+                    <div class="cs-float cs-float-crates">
+                        <div class="cs-crates">
+                            @foreach ([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0], [0, 0, 1], [1, 0, 1], [0, 1, 1]] as [$cx, $cy, $cz])
+                                <div class="cs-cube" style="--cx: {{ $cx }}; --cy: {{ $cy }}; --cz: {{ $cz }}">
+                                    <i class="cs-face-top"></i><i class="cs-face-front"></i><i class="cs-face-side"></i>
+                                </div>
+                            @endforeach
+                        </div>
+                        <div>
+                            <small>Lot A-1042</small>
+                            <strong>240 bags</strong>
+                        </div>
                     </div>
                 </div>
-            </section>
+            </div>
+        </div>
+    </section>
 
-            <section id="who" class="landing-band landing-band-alt">
-                <div class="landing-shell landing-section">
-                    <div class="landing-section-head landing-reveal" data-reveal>
-                        <p class="landing-eyebrow" data-i18n="who.eyebrow">Audience</p>
-                        <h2 data-i18n="who.title">Who it is for</h2>
-                    </div>
-                    <div class="landing-split">
-                        <article class="landing-role landing-reveal" data-reveal>
-                            <span class="landing-role-mark" aria-hidden="true">01</span>
-                            <h3 class="landing-split-title" data-i18n="who.role1.title">Cold store teams</h3>
-                            <p class="landing-split-copy" data-i18n="who.role1.copy">Receive goods into a chamber or rack, track stock on hand, and return goods when the customer asks. Quantity cannot exceed what is available.</p>
+    {{-- Highlights strip (overlaps hero) --}}
+    <section class="cs-shell cs-highlights" aria-label="Highlights">
+        <article>
+            <span class="cs-ico">@include('landing.icon', ['name' => 'box'])</span>
+            <div><h3>Per-lot tracking</h3><p>Packages, weight and chamber for every lot.</p></div>
+        </article>
+        <article>
+            <span class="cs-ico">@include('landing.icon', ['name' => 'thermo'])</span>
+            <div><h3>Chamber health</h3><p>Temperature readings, capacity and alerts.</p></div>
+        </article>
+        <article>
+            <span class="cs-ico">@include('landing.icon', ['name' => 'receipt'])</span>
+            <div><h3>Storage billing</h3><p>Rate cards, withdrawals and stock billing.</p></div>
+        </article>
+        <article>
+            <span class="cs-ico">@include('landing.icon', ['name' => 'wallet'])</span>
+            <div><h3>Cash or bank</h3><p>Every payment routed, balances live.</p></div>
+        </article>
+    </section>
+
+    {{-- About --}}
+    <section class="cs-section">
+        <div class="cs-shell cs-about">
+            <div class="cs-about-visual" data-reveal data-tilt3d>
+                <div class="cs-about-card">
+                    <p class="cs-mock-label">Customer overview · sample</p>
+                    <h4>Malik Traders</h4>
+                    <div class="cs-meter"><span>Given for storage</span><b style="--fill: 100%"></b><em>1,200</em></div>
+                    <div class="cs-meter"><span>Returned</span><b style="--fill: 35%"></b><em>420</em></div>
+                    <div class="cs-meter"><span>Still in store</span><b style="--fill: 65%" class="is-ice"></b><em>780</em></div>
+                </div>
+                <div class="cs-about-badge">
+                    <strong>0</strong>
+                    <span>shop sales or purchases created by storage movements</span>
+                </div>
+            </div>
+            <div class="cs-about-copy" data-reveal>
+                <p class="cs-eyebrow">About the product</p>
+                <h2>Built for cold stores, not retail shops.</h2>
+                <p>
+                    Your customers keep their own goods with you — bags, crates, weight. The goods stay theirs until they
+                    leave. Cold Storage CRM records every receipt, transfer, return and damage adjustment against the
+                    customer's lots, so the stock you hold is never confused with stock you sell.
+                </p>
+                <ul class="cs-checks">
+                    <li>Return partial or full lots — quantity can never exceed what's available</li>
+                    <li>Transfer stock between chambers, racks and bins</li>
+                    <li>Record damage or lost packages with a reason, so the ledger stays accurate</li>
+                </ul>
+                <a class="cs-btn cs-btn-dark" href="{{ route('how-it-works') }}">Read the full guide</a>
+            </div>
+        </div>
+    </section>
+
+    {{-- Modules --}}
+    <section class="cs-section cs-section-tint" id="features">
+        <div class="cs-shell">
+            <div class="cs-head" data-reveal>
+                <p class="cs-eyebrow">Modules</p>
+                <h2>Everything the cold store desk needs, in one panel.</h2>
+                <p>Six modules that cover the whole operating day, from the gate to the cash book.</p>
+            </div>
+            <div class="cs-cards">
+                @foreach ([
+                    ['box', 'Inbound', 'Goods receipts', 'Branch, customer, lot lines and chamber allocation, with a draft-to-posted workflow. Stock appears the moment you post.'],
+                    ['truck', 'Outbound', 'Returns', 'Hand goods back from active lots in partial or full quantities, with built-in stock safety checks.'],
+                    ['receipt', 'Billing', 'Storage billing', 'Rate cards per customer, Bill a withdrawal, Bill from stock, invoices, dues and collected payments.'],
+                    ['wallet', 'Payments', 'Cash accounts', 'Route each payment to cash in hand or bank. Balances update on the dashboard straight away.'],
+                    ['users', 'Customers', 'Customer overview', 'For each customer: packages given for storage, returned and still in store — with links to every list.'],
+                    ['thermo', 'Monitoring', 'Chamber health', 'Temperature readings, action alerts, a capacity heatmap and optional reservations.'],
+                ] as [$icon, $tag, $title, $copy])
+                    <article class="cs-card" data-reveal data-tilt3d>
+                        <span class="cs-ico cs-ico-lg">@include('landing.icon', ['name' => $icon])</span>
+                        <p class="cs-card-tag">{{ $tag }}</p>
+                        <h3>{{ $title }}</h3>
+                        <p>{{ $copy }}</p>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
+    {{-- Why choose --}}
+    <section class="cs-section cs-dark">
+        <div class="cs-shell cs-why">
+            @include('landing.cold-room', ['tag' => 'Chamber A', 'detail' => '-18.0°C · 86% full'])
+            <div>
+                <div data-reveal>
+                    <p class="cs-eyebrow cs-eyebrow-light">Why Cold Storage CRM</p>
+                    <h2>Where clear stock records meet simple billing.</h2>
+                    <p class="cs-muted-light">
+                        A normal shop POS treats everything on the shelf as yours. A cold store holds other people's goods
+                        and charges rent for the space. Cold Storage CRM is built around that difference.
+                    </p>
+                </div>
+                <div class="cs-why-list">
+                    @foreach ([
+                        ['shield', 'Customer-owned stock', 'Goods stay on the customer\'s account until they leave. Storage movements never touch your sales or purchase stock.'],
+                        ['check', 'Stock you can trust', 'Returns can\'t exceed what\'s in store, and every damage adjustment needs a reason.'],
+                        ['print', 'Print-ready documents', 'Customer ledgers, stock registers, rent registers and invoices — ready to print or hand over.'],
+                    ] as [$icon, $title, $copy])
+                        <article data-reveal>
+                            <span class="cs-ico cs-ico-dark">@include('landing.icon', ['name' => $icon])</span>
+                            <div><h3>{{ $title }}</h3><p>{{ $copy }}</p></div>
                         </article>
-                        <article class="landing-role landing-reveal" data-reveal>
-                            <span class="landing-role-mark" aria-hidden="true">02</span>
-                            <h3 class="landing-split-title" data-i18n="who.role2.title">Billing &amp; cash desks</h3>
-                            <p class="landing-split-copy" data-i18n="who.role2.copy">Bill a withdrawal after a return, or bill from remaining stock. Preview the calculation, then collect into cash in hand or bank so balances update on the dashboard.</p>
-                        </article>
-                    </div>
+                    @endforeach
                 </div>
-            </section>
+                <a class="cs-btn cs-btn-primary cs-why-cta" href="{{ $demoUrl }}">Explore the demo</a>
+            </div>
+        </div>
+    </section>
 
-            <section class="landing-band">
-                <div class="landing-shell landing-section">
-                    <div class="landing-section-head landing-reveal" data-reveal>
-                        <p class="landing-eyebrow" data-i18n="flow.eyebrow">Operations</p>
-                        <h2 data-i18n="flow.title">The daily flow</h2>
-                        <p data-i18n="flow.lead">One operating loop from the door to the bill.</p>
-                    </div>
-
-                    <div class="landing-flow landing-flow-steps">
-                        <div class="landing-flow-row landing-reveal" data-reveal>
-                            <div class="landing-flow-index">01</div>
-                            <h3 class="landing-flow-title" data-i18n="flow.1.title">Receive</h3>
-                            <p class="landing-flow-copy" data-i18n="flow.1.copy">Post inbound lots with product, packages, weight, and chamber allocation. Stock appears on the dashboard after post.</p>
-                        </div>
-                        <div class="landing-flow-row landing-reveal" data-reveal>
-                            <div class="landing-flow-index">02</div>
-                            <h3 class="landing-flow-title" data-i18n="flow.2.title">Store</h3>
-                            <p class="landing-flow-copy" data-i18n="flow.2.copy">Track stock on hand by lot, chamber occupancy, transfers between locations, temperature readings, and action alerts.</p>
-                        </div>
-                        <div class="landing-flow-row landing-reveal" data-reveal>
-                            <div class="landing-flow-index">03</div>
-                            <h3 class="landing-flow-title" data-i18n="flow.3.title">Return</h3>
-                            <p class="landing-flow-copy" data-i18n="flow.3.copy">Dispatch partial or full lots for the same customer. Available quantity is enforced; no sale invoice is created.</p>
-                        </div>
-                        <div class="landing-flow-row landing-reveal" data-reveal>
-                            <div class="landing-flow-index">04</div>
-                            <h3 class="landing-flow-title" data-i18n="flow.4.title">Bill &amp; collect</h3>
-                            <p class="landing-flow-copy" data-i18n="flow.4.copy">After a return, use Bill a withdrawal (cash in hand or bank). For stock still in store, use Bill from stock, preview, post, then record payment.</p>
-                        </div>
-                    </div>
+    {{-- Process --}}
+    <section class="cs-section" id="process">
+        <div class="cs-shell">
+            <div class="cs-head cs-head-split" data-reveal>
+                <div>
+                    <p class="cs-eyebrow">The daily flow</p>
+                    <h2>One operating loop, from the door to the bill.</h2>
                 </div>
-            </section>
+                <a class="cs-btn cs-btn-dark" href="{{ route('how-it-works') }}">Step-by-step guide</a>
+            </div>
+            <ol class="cs-steps">
+                @foreach ([
+                    ['Receive', 'Post inbound lots with product, packages, weight and chamber. Stock shows on the dashboard after posting.'],
+                    ['Store', 'Track stock on hand by lot, chamber occupancy, transfers, temperature readings and alerts.'],
+                    ['Return', 'Dispatch partial or full lots to the same customer. Available quantity is enforced.'],
+                    ['Bill & collect', 'Bill a withdrawal after a return, or bill from stock still in store. Preview, post, record payment.'],
+                ] as $i => [$title, $copy])
+                    <li data-reveal data-tilt3d>
+                        <span class="cs-step-num">{{ sprintf('%02d', $i + 1) }}</span>
+                        <h3>{{ $title }}</h3>
+                        <p>{{ $copy }}</p>
+                    </li>
+                @endforeach
+            </ol>
+        </div>
+    </section>
 
-            <section id="capabilities" class="landing-band landing-band-alt">
-                <div class="landing-shell landing-section">
-                    <div class="landing-section-head landing-reveal" data-reveal>
-                        <p class="landing-eyebrow" data-i18n="caps.eyebrow">Workspace</p>
-                        <h2 data-i18n="caps.title">What the panel covers</h2>
-                        <p data-i18n="caps.lead">The cold storage modules in the merchant panel.</p>
-                    </div>
+    {{-- Setup --}}
+    <section class="cs-section cs-section-tint" id="setup">
+        <div class="cs-shell">
+            <div class="cs-head" data-reveal>
+                <p class="cs-eyebrow">Setup</p>
+                <h2>Set up once, operate every day.</h2>
+                <p>Describe your facility and your customers once. After that the daily work stays simple.</p>
+            </div>
+            <div class="cs-tiers">
+                @foreach ([
+                    ['Facility', 'Businesses & branches', ['Businesses and branches', 'One panel for every site'], '01'],
+                    ['Chambers', 'Capacity & temperature', ['Capacity limits per chamber', 'Temperature limits per chamber'], '°C'],
+                    ['Locations', 'Racks & bins', ['Optional racks and bins', 'Transfers between locations'], 'A-12'],
+                    ['Customers', 'Products & rate cards', ['Goods owners and their products', 'Storage rates per customer'], 'Rs'],
+                ] as [$tag, $title, $points, $badge])
+                    <article class="cs-tier" data-reveal data-tilt3d>
+                        <div class="cs-tier-top">
+                            <p class="cs-card-tag">{{ $tag }}</p>
+                            <span class="cs-tier-badge">{{ $badge }}</span>
+                        </div>
+                        <h3>{{ $title }}</h3>
+                        <ul>
+                            @foreach ($points as $point)
+                                <li>{{ $point }}</li>
+                            @endforeach
+                        </ul>
+                    </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
 
-                    <div class="landing-flow landing-flow-caps">
-                        <div class="landing-flow-row landing-reveal" data-reveal>
-                            <div class="landing-flow-index">IN</div>
-                            <h3 class="landing-flow-title" data-i18n="caps.1.title">Goods receipts</h3>
-                            <p class="landing-flow-copy" data-i18n="caps.1.copy">Branch, customer, lot lines, chamber allocation, draft to posted workflow.</p>
-                        </div>
-                        <div class="landing-flow-row landing-reveal" data-reveal>
-                            <div class="landing-flow-index">OUT</div>
-                            <h3 class="landing-flow-title" data-i18n="caps.2.title">Returns</h3>
-                            <p class="landing-flow-copy" data-i18n="caps.2.copy">Hand stock back from active lots with partial quantities and stock safety checks.</p>
-                        </div>
-                        <div class="landing-flow-row landing-reveal" data-reveal>
-                            <div class="landing-flow-index">AR</div>
-                            <h3 class="landing-flow-title" data-i18n="caps.3.title">Storage billing</h3>
-                            <p class="landing-flow-copy" data-i18n="caps.3.copy">Rate cards, Bill a withdrawal, Bill from stock, invoices, due amounts, and collected payments.</p>
-                        </div>
-                        <div class="landing-flow-row landing-reveal" data-reveal>
-                            <div class="landing-flow-index">CA</div>
-                            <h3 class="landing-flow-title" data-i18n="caps.4.title">Cash accounts</h3>
-                            <p class="landing-flow-copy" data-i18n="caps.4.copy">Route each payment to cash in hand or bank; live balances on the dashboard.</p>
-                        </div>
-                        <div class="landing-flow-row landing-reveal" data-reveal>
-                            <div class="landing-flow-index">ID</div>
-                            <h3 class="landing-flow-title" data-i18n="caps.5.title">Customer overview</h3>
-                            <p class="landing-flow-copy" data-i18n="caps.5.copy">Per customer: packages given for storage, returned, still in store, with deep links to lists.</p>
-                        </div>
-                        <div class="landing-flow-row landing-reveal" data-reveal>
-                            <div class="landing-flow-index">°C</div>
-                            <h3 class="landing-flow-title" data-i18n="caps.6.title">Chamber health</h3>
-                            <p class="landing-flow-copy" data-i18n="caps.6.copy">Temperature readings, action alerts, capacity heatmap, and optional reservations.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
+    {{-- Who it's for --}}
+    <section class="cs-section">
+        <div class="cs-shell">
+            <div class="cs-head" data-reveal>
+                <p class="cs-eyebrow">Who it's for</p>
+                <h2>One panel for the whole team.</h2>
+            </div>
+            <div class="cs-roles">
+                <article data-reveal data-tilt3d>
+                    <span class="cs-ico cs-ico-lg">@include('landing.icon', ['name' => 'box'])</span>
+                    <h3>Cold store teams</h3>
+                    <p>Receive goods into a chamber or rack, keep stock on hand accurate, and return goods when the customer asks.</p>
+                </article>
+                <article data-reveal data-tilt3d>
+                    <span class="cs-ico cs-ico-lg">@include('landing.icon', ['name' => 'receipt'])</span>
+                    <h3>Billing &amp; cash desks</h3>
+                    <p>Bill a withdrawal or bill from stock, preview the calculation, then collect into cash in hand or bank.</p>
+                </article>
+                <article data-reveal data-tilt3d>
+                    <span class="cs-ico cs-ico-lg">@include('landing.icon', ['name' => 'chart'])</span>
+                    <h3>Owners &amp; managers</h3>
+                    <p>See stock in store, chamber occupancy, dues and cash balances on one dashboard, with alerts that need action.</p>
+                </article>
+            </div>
+        </div>
+    </section>
 
-            <section class="landing-band">
-                <div class="landing-shell landing-section">
-                    <div class="landing-section-head landing-reveal" data-reveal>
-                        <p class="landing-eyebrow" data-i18n="setup.eyebrow">Configuration</p>
-                        <h2 data-i18n="setup.title">Setup once, operate every day</h2>
-                        <p data-i18n="setup.lead">Configure the facility, then the daily work stays simple.</p>
-                    </div>
-                    <div class="landing-setup">
-                        <div class="landing-setup-item landing-reveal" data-reveal>
-                            <h3 class="landing-setup-title" data-i18n="setup.1.title">Facility</h3>
-                            <p class="landing-setup-copy" data-i18n="setup.1.copy">Businesses, branches, chambers with capacity and temperature limits, optional racks and bins.</p>
-                        </div>
-                        <div class="landing-setup-item landing-reveal" data-reveal>
-                            <h3 class="landing-setup-title" data-i18n="setup.2.title">Parties &amp; products</h3>
-                            <p class="landing-setup-copy" data-i18n="setup.2.copy">Customers (goods owners), products (for example Potatoes), and storage rate cards for that customer.</p>
-                        </div>
-                        <div class="landing-setup-item landing-reveal" data-reveal>
-                            <h3 class="landing-setup-title" data-i18n="setup.3.title">Exceptions</h3>
-                            <p class="landing-setup-copy" data-i18n="setup.3.copy">Damage and adjustments for torn or lost packages, with a reason, so the ledger stays accurate.</p>
-                        </div>
-                    </div>
-                </div>
-            </section>
+    {{-- FAQ --}}
+    <section class="cs-section cs-section-tint" id="faq">
+        <div class="cs-shell cs-faq">
+            <div data-reveal>
+                <p class="cs-eyebrow">FAQ</p>
+                <h2>Straight answers before you start.</h2>
+                <p class="cs-muted">Still unsure? Open the demo and click around — it's the quickest way to see it.</p>
+                <a class="cs-btn cs-btn-primary" href="{{ $demoUrl }}">Try the live demo</a>
+            </div>
+            <div class="cs-faq-list">
+                @foreach ([
+                    ['Is this a normal shop POS?', 'No. Customers own the goods you store. Cold storage movements never create classic sales or purchase stock, so your shop figures stay separate.'],
+                    ['Can a customer take back only part of a lot?', 'Yes. Returns can be partial or full. The system checks the available quantity, so you can never return more than is in store.'],
+                    ['How is storage rent billed?', 'Two ways: Bill a withdrawal after goods are returned, or Bill from stock for goods still in store. Both use the customer\'s rate card, and you preview the bill before posting.'],
+                    ['Where do payments go?', 'You choose cash in hand or bank for each payment. Balances on the dashboard update straight away.'],
+                    ['Can I print ledgers and registers?', 'Yes — customer ledgers, the stock register, the rent register and invoices all have print-ready versions.'],
+                    ['How does the demo work?', 'Click "Try the live demo" and you get your own temporary account with sample data. No sign-up needed; demo data resets daily.'],
+                ] as $i => [$q, $a])
+                    <details class="cs-faq-item" @if ($i === 0) open @endif>
+                        <summary>{{ $q }}</summary>
+                        <p>{{ $a }}</p>
+                    </details>
+                @endforeach
+            </div>
+        </div>
+    </section>
 
-            <section class="landing-band landing-band-alt">
-                <div class="landing-shell landing-section">
-                    <div class="landing-clarify landing-reveal" data-reveal>
-                        <div class="landing-clarify-copy">
-                            <p class="landing-eyebrow" data-i18n="clarify.eyebrow">Clarity</p>
-                            <h2 data-i18n="clarify.title">Clear answer when someone asks “is this my shop stock?”</h2>
-                            <p class="landing-clarify-answer"><span data-i18n="clarify.no">No.</span> <span data-i18n="clarify.answer">Cold storage movements never create classic sales or purchases product stock.</span></p>
-                        </div>
-                        <aside class="landing-about-panel">
-                            <p class="landing-about-label" data-i18n="clarify.label">Why it matters</p>
-                            <p data-i18n="clarify.aside">
-                                Goods stay customer-owned until they leave. That is the difference from a normal shop POS.
-                            </p>
-                        </aside>
-                    </div>
-                </div>
-            </section>
-
-            <section class="landing-band">
-                <div class="landing-shell landing-section landing-section-cta">
-                    <div class="landing-cta landing-reveal" data-reveal>
-                        <p class="landing-eyebrow" data-i18n="cta.eyebrow">Get started</p>
-                        <h2 data-i18n="cta.title">Run the cold store from one merchant panel.</h2>
-                        <p data-i18n="cta.copy">Dashboard, goods receipts, returns, storage bills, cash in hand or bank, chamber occupancy, and action alerts.</p>
-                        <div class="landing-actions landing-actions-center">
-                            <a class="landing-btn landing-btn-primary" href="{{ route('how-it-works') }}" data-i18n="hero.cta.how">How it works</a>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <footer class="landing-shell landing-footer">
-            <div class="landing-footer-rule" aria-hidden="true"></div>
-            <p data-i18n="footer.landing">EverGreen Cold Storage · Merchant operations for customer-owned goods</p>
-        </footer>
-    </div>
-</body>
-</html>
+    {{-- CTA --}}
+    <section class="cs-shell cs-cta-wrap">
+        <div class="cs-cta" data-reveal>
+            <div>
+                <h2>Ready to run your cold store from one panel?</h2>
+                <p>Dashboard, goods receipts, returns, storage bills, cash in hand or bank, chamber occupancy and alerts.</p>
+            </div>
+            <div class="cs-actions">
+                <a class="cs-btn cs-btn-light cs-btn-lg" href="{{ $demoUrl }}">Try the live demo</a>
+                <a class="cs-btn cs-btn-outline-light cs-btn-lg" href="{{ route('how-it-works') }}">See how it works</a>
+            </div>
+        </div>
+    </section>
+</main>
+@endsection

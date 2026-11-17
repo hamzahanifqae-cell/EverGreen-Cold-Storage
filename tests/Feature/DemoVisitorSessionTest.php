@@ -87,14 +87,41 @@ class DemoVisitorSessionTest extends TestCase
 
         $response = $this->get(route('demo.login'));
 
-        $response->assertRedirect(route('filament.merchant.auth.login'));
-        $response->assertSessionHas('demo_expired');
+        // Demo visitors go back to the landing page, not the merchant login.
+        $response->assertRedirect(route('landing').'/?demo=blocked');
         $this->assertGuest('merchant');
         $this->assertDatabaseMissing('merchants', ['id' => $merchant->id]);
 
         $visitorSession = DemoVisitorSession::query()->first();
         $this->assertNotNull($visitorSession);
         $this->assertNull($visitorSession->merchant_id);
+    }
+
+    public function test_exiting_the_demo_returns_to_the_landing_page(): void
+    {
+        $this->get(route('demo.login'))->assertRedirect('/merchant');
+
+        $this->get(route('demo.exit'))
+            ->assertRedirect(route('landing').'/?demo=left');
+
+        $this->assertGuest('merchant');
+    }
+
+    public function test_landing_page_shows_the_demo_notice(): void
+    {
+        $this->get(route('landing').'/?demo=left')
+            ->assertOk()
+            ->assertSee('data-toast', false)
+            ->assertSee('You left the demo');
+
+        $this->get(route('landing').'/?demo=expired')
+            ->assertSee('Your demo time has ended');
+
+        $this->get(route('landing'))
+            ->assertDontSee('data-toast', false);
+
+        $this->get(route('landing').'/?demo=<script>')
+            ->assertDontSee('data-toast', false);
     }
 
     private function mockProvisioner(): void

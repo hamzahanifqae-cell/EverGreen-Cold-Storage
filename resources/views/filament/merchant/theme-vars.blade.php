@@ -42,11 +42,11 @@
             --flowdesk-sidebar-green: {{ $primary[600] ?? $sidebarPrimary }};
             --flowdesk-sidebar-teal: {{ $primary[400] ?? ($sidebarSecondary ?? $sidebarPrimary) }};
         @else
-            --flowdesk-purple: {{ config('branding.colors.primary') }};
-            --flowdesk-accent-gradient: linear-gradient(135deg, {{ config('branding.sidebar.gradient_start') }} 0%, {{ config('branding.sidebar.gradient_mid') }} 62%, {{ config('branding.sidebar.gradient_end') }} 100%);
-            --flowdesk-sidebar-blue: {{ config('branding.sidebar.gradient_start') }};
-            --flowdesk-sidebar-green: {{ config('branding.sidebar.gradient_mid') }};
-            --flowdesk-sidebar-teal: {{ config('branding.sidebar.gradient_end') }};
+            --flowdesk-purple: {{ \App\Support\PanelBranding::get('colors.primary') }};
+            --flowdesk-accent-gradient: linear-gradient(135deg, {{ \App\Support\PanelBranding::get('sidebar.gradient_start') }} 0%, {{ \App\Support\PanelBranding::get('sidebar.gradient_mid') }} 62%, {{ \App\Support\PanelBranding::get('sidebar.gradient_end') }} 100%);
+            --flowdesk-sidebar-blue: {{ \App\Support\PanelBranding::get('sidebar.gradient_start') }};
+            --flowdesk-sidebar-green: {{ \App\Support\PanelBranding::get('sidebar.gradient_mid') }};
+            --flowdesk-sidebar-teal: {{ \App\Support\PanelBranding::get('sidebar.gradient_end') }};
         @endif
     }
 

@@ -51,7 +51,7 @@ class ColdStorageAccess
             return false;
         }
 
-        if ($user instanceof Merchant && ! $user->permissionModules()->where('module', 'cold_storage')->exists()) {
+        if ($user instanceof Merchant && ! $user->hasPermissionModule('cold_storage')) {
             return false;
         }
 

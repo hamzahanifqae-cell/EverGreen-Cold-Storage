@@ -57,7 +57,10 @@ class DemoSeeder extends Seeder
 
         if (DemoAccount::isTemporaryDemoEmail($email)
             && preg_match('/^demo-([a-f0-9]{32})@/i', $email, $matches) === 1) {
-            $this->staffEmailNamespace = substr($matches[1], 0, 8);
+            // Use the *end* of the session id: the start is time-based, so two demos
+            // started within ~a minute shared a prefix and collided on unique
+            // document numbers (e.g. SR-DEMO-01-xxxx) and staff emails.
+            $this->staffEmailNamespace = substr($matches[1], -12);
         }
 
         $this->run();

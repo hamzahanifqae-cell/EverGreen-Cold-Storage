@@ -232,4 +232,34 @@ class Merchant extends Authenticatable implements HasAvatar , CanResetPasswordCo
         )->withTimestamps();
     }
 
+    /** Module names this merchant has, loaded once per request (see hasPermissionModule). */
+    protected ?array $permissionModuleNamesCache = null;
+
+    /**
+     * Names of the permission modules enabled for this merchant.
+     *
+     * The sidebar asks "is module X enabled?" once per navigation item (30+ times
+     * a page). Loading the list once and answering from memory turns those
+     * into a single query per request.
+     *
+     * @return array<int, string>
+     */
+    public function permissionModuleNames(): array
+    {
+        return $this->permissionModuleNamesCache ??= $this->permissionModules()
+            ->pluck('module')
+            ->all();
+    }
+
+    public function hasPermissionModule(string $module): bool
+    {
+        return in_array($module, $this->permissionModuleNames(), true);
+    }
+
+    /** Call after granting/revoking modules on this same instance. */
+    public function forgetPermissionModuleNames(): void
+    {
+        $this->permissionModuleNamesCache = null;
+    }
+
 }

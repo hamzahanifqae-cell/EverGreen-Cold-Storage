@@ -10,6 +10,8 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/css/landing.css',
                 'resources/js/landing.js',
+                'resources/css/home.css',
+                'resources/js/home.js',
                 'resources/css/filament/merchant/theme.css',
             ],
             refresh: true,

@@ -47,17 +47,12 @@ class PermissionModule extends Model implements Auditable
 
         // Merchant panel
         if ($user instanceof \App\Models\Merchant) {
-            return $user->permissionModules()
-                ->pluck('module')
-                ->toArray();
+            return $user->permissionModuleNames();
         }
 
         // Staff panel → inherit from merchant
         if ($user instanceof \App\Models\User && $user->merchant) {
-            return $user->merchant
-                ->permissionModules()
-                ->pluck('module')
-                ->toArray();
+            return $user->merchant->permissionModuleNames();
         }
 
         return [];
@@ -68,19 +63,14 @@ class PermissionModule extends Model implements Auditable
     {
         $user = Filament::auth()->user();
 
-        // ✅ Merchant owns modules
+        // ✅ Merchant owns modules (list is loaded once per request)
         if ($user instanceof \App\Models\Merchant) {
-            return $user->permissionModules()
-                ->where('module', $module)
-                ->exists();
+            return $user->hasPermissionModule($module);
         }
 
         // ✅ Staff inherits from merchant
         if ($user instanceof \App\Models\User) {
-            return optional($user->merchant)
-                ->permissionModules()
-                ->where('module', $module)
-                ->exists() ?? false;
+            return $user->merchant?->hasPermissionModule($module) ?? false;
         }
 
         return false;

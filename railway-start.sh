@@ -46,5 +46,13 @@ fi
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
+php artisan event:cache
+# Filament: cache component discovery + Blade icons (otherwise rescanned on every request).
+php artisan filament:optimize
 
-exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
+# PHP's built-in server handles ONE request at a time by default, so every page,
+# Livewire update, script, stylesheet and image queued behind each other (and
+# behind other users). Run several workers instead; --no-reload is required for
+# Laravel to honour PHP_CLI_SERVER_WORKERS.
+export PHP_CLI_SERVER_WORKERS="${PHP_CLI_SERVER_WORKERS:-4}"
+exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}" --no-reload

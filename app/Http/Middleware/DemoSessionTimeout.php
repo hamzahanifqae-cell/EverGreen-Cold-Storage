@@ -54,9 +54,7 @@ class DemoSessionTimeout
             Auth::guard('merchant')->logout();
             $request->session()->forget('demo_visitor_session_id');
 
-            return redirect()
-                ->route('filament.merchant.auth.login')
-                ->with('demo_expired', (string) config('demo.notices.demo_expired'));
+            return DemoAccount::redirectToLanding('expired');
         }
 
         $visitorSession->touchLastSeen();

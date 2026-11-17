@@ -27,12 +27,7 @@ class DemoAccountController extends Controller
                 $visitorSession->delete();
                 $visitorSession = null;
             } else {
-                return redirect()
-                    ->route('filament.merchant.auth.login')
-                    ->with(
-                        'demo_expired',
-                        'Your demo time has ended. You can start a new demo after the daily reset at '.DemoAccount::dailyResetLabel().'.'
-                    );
+                return DemoAccount::redirectToLanding('blocked');
             }
         }
 

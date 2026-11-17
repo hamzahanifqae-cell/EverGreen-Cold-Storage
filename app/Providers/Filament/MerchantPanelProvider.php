@@ -9,6 +9,7 @@ use App\Http\Middleware\DemoSessionTimeout;
 use App\Http\Middleware\EnsureStaffIsVerified;
 use App\Http\Middleware\SetPanelAuthDefaults;
 use App\Support\DomainConfig;
+use App\Support\PanelBranding;
 use Filament\Actions\Action;
 use Filament\Enums\ThemeMode;
 use Filament\Facades\Filament;
@@ -45,10 +46,15 @@ class MerchantPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->defaultThemeMode(ThemeMode::Dark)
-            ->favicon(asset(config('branding.favicon')))
+            ->favicon(fn () => asset(PanelBranding::get('favicon')))
             ->brandLogo(function () {
                 $merchant = Filament::auth()->user();
-                $defaultLogo = asset(config('branding.logo'));
+                $defaultLogo = asset(PanelBranding::get('logo'));
+
+                // Demo visitors always see the Cold Storage CRM logo.
+                if (PanelBranding::isDemo()) {
+                    return $defaultLogo;
+                }
 
                 if (! $merchant) {
                     return $defaultLogo;
@@ -66,9 +72,13 @@ class MerchantPanelProvider extends PanelProvider
 
                 return asset('storage/'.$path);
             })
-            ->brandName(fn () => Filament::auth()->user()?->name ?? config('branding.name'))
+            ->brandName(fn () => PanelBranding::isDemo()
+                ? PanelBranding::get('name')
+                : (Filament::auth()->user()?->name ?? config('branding.name')))
             ->brandLogoHeight('2.5rem')
-            ->darkModeBrandLogo(asset(config('branding.logo_dark')))
+            ->darkModeBrandLogo(fn () => PanelBranding::isDemo()
+                ? asset(PanelBranding::get('logo_dark'))
+                : asset(config('branding.logo_dark')))
             ->userMenuItems([
                 Action::make('editProfile')
                     ->label('Edit profile')
@@ -90,17 +100,18 @@ class MerchantPanelProvider extends PanelProvider
                     ];*/
 
                     $merchant = Filament::auth()->user();
-                    $settings = $merchant?->settings;
+                    // Demo visitors get the Cold Storage CRM colours, not the merchant's saved ones.
+                    $settings = PanelBranding::isDemo() ? null : $merchant?->settings;
 
                     return view('filament.merchant.theme-vars', [
-                        'primary' => Color::generatePalette($settings?->primary_color ?? config('branding.colors.primary')),
-                        'success' => Color::generatePalette($settings?->success_color ?? config('branding.colors.success')),
-                        'secondary' => Color::generatePalette($settings?->secondary_color ?? config('branding.colors.secondary')),
-                        'danger' => Color::generatePalette($settings?->danger_color ?? config('branding.colors.danger')),
-                        'warning' => Color::generatePalette($settings?->warning_color ?? config('branding.colors.warning')),
-                        'default' => Color::generatePalette($settings?->default_color ?? config('branding.colors.default')),
-                        'sidebarPrimary' => $settings?->primary_color ?? config('branding.colors.primary'),
-                        'sidebarSecondary' => $settings?->secondary_color ?? config('branding.colors.accent'),
+                        'primary' => Color::generatePalette($settings?->primary_color ?? PanelBranding::get('colors.primary')),
+                        'success' => Color::generatePalette($settings?->success_color ?? PanelBranding::get('colors.success')),
+                        'secondary' => Color::generatePalette($settings?->secondary_color ?? PanelBranding::get('colors.secondary')),
+                        'danger' => Color::generatePalette($settings?->danger_color ?? PanelBranding::get('colors.danger')),
+                        'warning' => Color::generatePalette($settings?->warning_color ?? PanelBranding::get('colors.warning')),
+                        'default' => Color::generatePalette($settings?->default_color ?? PanelBranding::get('colors.default')),
+                        'sidebarPrimary' => $settings?->primary_color ?? PanelBranding::get('colors.primary'),
+                        'sidebarSecondary' => $settings?->secondary_color ?? PanelBranding::get('colors.accent'),
                     ]);
                 })
             ->navigationGroups([

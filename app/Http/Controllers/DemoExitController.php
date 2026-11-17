@@ -35,12 +35,7 @@ class DemoExitController extends Controller
 
     private function redirectWithNotice(string $notice): RedirectResponse
     {
-        $message = (string) config("demo.notices.{$notice}", '');
-
-        $flashKey = $notice === 'demo_expired' ? 'demo_expired' : 'status';
-
-        return redirect()
-            ->route('filament.merchant.auth.login')
-            ->with($flashKey, $message);
+        // Back to the marketing site, not the merchant login (demo visitors have no login).
+        return DemoAccount::redirectToLanding($notice === 'demo_expired' ? 'expired' : 'left');
     }
 }

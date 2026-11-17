@@ -33,6 +33,32 @@ return [
         'default' => '#1e293b',
     ],
 
+    /*
+    | Branding shown to "Try demo" visitors from the marketing site, so the demo
+    | matches the Cold Storage CRM landing page. Keys mirror the ones above;
+    | anything not set here falls back to the normal branding.
+    */
+    'demo' => [
+        'name' => 'Cold Storage CRM',
+        'logo' => 'images/cold-storage-crm-logo.svg',
+        'logo_dark' => 'images/cold-storage-crm-logo-dark.svg',
+        'favicon' => 'images/cold-storage-crm-icon.svg',
+        'colors' => [
+            'primary' => '#0b6bcb',
+            'secondary' => '#64748b',
+            'accent' => '#38bdf8',
+            'success' => '#22c55e',
+            'danger' => '#dc2626',
+            'warning' => '#f59e0b',
+            'default' => '#1e293b',
+        ],
+        'sidebar' => [
+            'gradient_start' => '#38bdf8',
+            'gradient_mid' => '#0b6bcb',
+            'gradient_end' => '#0ea5e9',
+        ],
+    ],
+
     'sidebar' => [
         'background' => '#0a0a0a',
         'surface' => '#111827',

@@ -81,6 +81,31 @@ class DemoAccount
         return self::findVisitorSession();
     }
 
+    /**
+     * Send a demo visitor back to the marketing site with a notice
+     * ("left", "expired" or "blocked") that the landing page shows as a toast.
+     * Demo visitors have no login, so the merchant login page is the wrong place.
+     */
+    public static function redirectToLanding(string $notice): \Illuminate\Http\RedirectResponse
+    {
+        $base = DomainConfig::splitEnabled() ? DomainConfig::landingUrl() : route('landing');
+
+        return redirect()->away(rtrim($base, '/').'/?demo='.urlencode($notice));
+    }
+
+    /**
+     * The message shown on the landing page for a ?demo= notice, or null.
+     */
+    public static function landingNotice(?string $notice): ?string
+    {
+        return match ($notice) {
+            'left' => (string) config('demo.notices.demo_left'),
+            'expired' => (string) config('demo.notices.demo_expired'),
+            'blocked' => 'Your demo time has ended. You can start a new demo after the daily reset at '.self::dailyResetLabel().'.',
+            default => null,
+        };
+    }
+
     public static function isDemoSession(): bool
     {
         return self::isDemoMerchant() && self::currentVisitorSession() !== null;

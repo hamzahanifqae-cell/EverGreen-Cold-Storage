@@ -7,10 +7,15 @@ RUN apt-get update \
         libfreetype6-dev libjpeg62-turbo-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
-        pdo_mysql bcmath gd zip intl mbstring exif pcntl \
+        pdo_mysql bcmath gd zip intl mbstring exif pcntl opcache \
     && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
+
+# OPcache: keep compiled PHP in memory instead of recompiling thousands of
+# Laravel/Filament files on every request. Code never changes inside a running
+# container, so timestamp checks are switched off.
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/zz-opcache.ini
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

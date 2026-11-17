@@ -51,6 +51,8 @@ class UserPanelProvider extends PanelProvider
                 return asset(config('branding.logo'));
             })
             ->brandName(fn () => Filament::auth()->user()?->merchant?->name ?? config('branding.name'))
+            // Same size as the merchant panel (Filament's default 1.5rem looks tiny).
+            ->brandLogoHeight('2.5rem')
             ->darkModeBrandLogo(asset(config('branding.logo_dark')))
             ->viteTheme('resources/css/filament/merchant/theme.css')
             ->navigationGroups([
@@ -107,10 +109,6 @@ class UserPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
                 fn () => view('filament.auth.forgot-password-link')
-            )
-            ->renderHook(
-                PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
-                fn () => view('filament.auth.alternate-login-link')
             )
             ->renderHook(
                 'panels::body.end',

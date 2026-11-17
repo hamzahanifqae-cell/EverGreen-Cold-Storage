@@ -30,15 +30,10 @@ Branch: `main`
 
 ## 1. Connect GitHub to cPanel
 
-### A. Create the CRM subdomain folder (empty)
+### A. Domains (already done on this account)
 
-1. cPanel → **Domains** (or **Subdomains**).
-2. Create subdomain: `www` for domain `evergreencold.store`  
-   (or add `www.evergreencold.store` as its own domain entry).
-3. Note the **Document Root** cPanel assigns (often `public_html/www.evergreencold.store`).
-4. Make sure that folder is **empty** before cloning Git into it.
-
-Also add/create the apex domain `evergreencold.store` with its own document root (e.g. `public_html/evergreencold.store`). That folder will later point at the same Laravel `public` (symlink) or receive a thin landing-only setup after paths are confirmed.
+- `evergreencold.store` → `/home/techshakerco99/public_html/evergreencold.store` (landing)
+- `app.evergreencold.store` → `/home/techshakerco99/public_html/app.evergreencold.store` (CRM — Git clone here)
 
 Leave the main hosting `public_html` WordPress site alone.
 
@@ -60,7 +55,7 @@ Leave the main hosting `public_html` WordPress site alone.
 
 1. cPanel → **Git Version Control** → **Create**.
 2. Clone URL: `https://github.com/hamzahanifqae-cell/EverGreen-Cold-Storage.git`
-3. Repository Path: the **empty** CRM folder (e.g. `public_html/www.evergreencold.store`).
+3. Repository Path: the **empty** CRM folder `public_html/app.evergreencold.store`.
 4. Repository Name: `EverGreen-Cold-Storage` (any label).
 5. Branch: `main`.
 6. When asked for credentials: GitHub username + **PAT** as password (Option 1).
@@ -99,9 +94,9 @@ ls -la "$HOME/public_html" | head -40
 
 echo "=== EVERGREEN PATHS ==="
 ls -la "$HOME/public_html/evergreencold.store" 2>/dev/null | head -20
-ls -la "$HOME/public_html/www.evergreencold.store" 2>/dev/null | head -20
+ls -la "$HOME/public_html/app.evergreencold.store" 2>/dev/null | head -20
 ls -la "$HOME/evergreencold.store" 2>/dev/null | head -20
-ls -la "$HOME/www.evergreencold.store" 2>/dev/null | head -20
+ls -la "$HOME/app.evergreencold.store" 2>/dev/null | head -20
 
 echo "=== ARTISAN / GIT ==="
 find "$HOME" -maxdepth 4 -name 'artisan' 2>/dev/null
@@ -124,9 +119,9 @@ Or upload/run [`scripts/cpanel-discover.sh`](../scripts/cpanel-discover.sh).
 ```env
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://www.evergreencold.store
+APP_URL=https://app.evergreencold.store
 LANDING_DOMAIN=evergreencold.store
-APP_DOMAIN=www.evergreencold.store
+APP_DOMAIN=app.evergreencold.store
 LANDING_URL=https://evergreencold.store
 SESSION_DOMAIN=.evergreencold.store
 SESSION_SECURE_COOKIE=true
@@ -140,14 +135,14 @@ DB_PASSWORD=...
 Then (with the PHP binary from discovery):
 
 ```bash
-cd "$HOME/public_html/www.evergreencold.store"   # use real path from discovery
-composer install --no-dev --optimize-autoloader
-php artisan key:generate
-php artisan migrate --force
-php artisan storage:link
-php artisan config:cache
-php artisan route:cache
-php artisan view:cache
+cd "$HOME/public_html/app.evergreencold.store"
+/opt/cpanel/ea-php84/root/usr/bin/php "$HOME/composer.phar" install --no-dev --optimize-autoloader
+/opt/cpanel/ea-php84/root/usr/bin/php artisan key:generate
+/opt/cpanel/ea-php84/root/usr/bin/php artisan migrate --force
+/opt/cpanel/ea-php84/root/usr/bin/php artisan storage:link
+/opt/cpanel/ea-php84/root/usr/bin/php artisan config:cache
+/opt/cpanel/ea-php84/root/usr/bin/php artisan route:cache
+/opt/cpanel/ea-php84/root/usr/bin/php artisan view:cache
 ```
 
 Enable AutoSSL for both hosts.
