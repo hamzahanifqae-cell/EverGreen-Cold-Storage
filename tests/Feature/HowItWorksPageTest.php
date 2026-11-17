@@ -10,7 +10,7 @@ class HowItWorksPageTest extends TestCase
     {
         $this->get(route('how-it-works'))
             ->assertOk()
-            ->assertSee('How Cold Storage CRM')
+            ->assertSee('How EverGreen Cold Storage')
             ->assertSee('From the door to payment')
             ->assertSee('Take goods in')
             ->assertSee('Take payment')
@@ -23,18 +23,20 @@ class HowItWorksPageTest extends TestCase
             ->assertOk()
             ->assertSee(route('how-it-works', absolute: false), false)
             ->assertSee('How it works')
-            ->assertDontSee('EverGreen');
+            ->assertSee('EverGreen Cold Storage')
+            ->assertDontSee('Cold Storage CRM');
     }
 
-    public function test_marketing_pages_only_offer_the_demo_not_merchant_login(): void
+    public function test_marketing_pages_have_no_demo_or_login_links(): void
     {
         foreach (['landing', 'how-it-works'] as $page) {
             $this->get(route($page))
                 ->assertOk()
-                ->assertSee('/demo/login', false)
+                ->assertDontSee('/demo/login', false)
+                ->assertDontSee('Try the live demo')
                 ->assertDontSee('/merchant/login', false)
                 ->assertDontSee('Log in')
-                ->assertDontSee('EverGreen');
+                ->assertDontSee('Cold Storage CRM');
         }
     }
 }

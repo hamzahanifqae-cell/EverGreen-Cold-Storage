@@ -18,6 +18,12 @@ return [
 
     'primary_merchant_website' => env('PRIMARY_MERCHANT_WEBSITE', 'https://flowdesk.app'),
 
+    /*
+    | Phone number for the "Contact us" button on the marketing site.
+    | Leave empty until it is known; the button then scrolls to the footer.
+    */
+    'contact_phone' => env('CONTACT_PHONE'),
+
     'legacy_merchant_email' => 'info@zgngreenpvt.com',
 
     'colors' => [

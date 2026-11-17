@@ -1,4 +1,4 @@
-// Cold Storage CRM — marketing home page behaviour.
+// EverGreen Cold Storage — marketing home page behaviour.
 const root = document.documentElement;
 root.classList.add('cs-js');
 
@@ -42,18 +42,6 @@ if (reduceMotion || !('IntersectionObserver' in window)) {
         });
     }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
     reveals.forEach((node) => observer.observe(node));
-}
-
-// Gently drift the sample chamber temperatures in the hero mock-up.
-if (!reduceMotion) {
-    const temps = [...document.querySelectorAll('[data-temp]')];
-    window.setInterval(() => {
-        temps.forEach((node) => {
-            const base = Number(node.dataset.temp);
-            const value = base + (Math.random() - 0.5) * 0.6;
-            node.textContent = `${value.toFixed(1)}°C`;
-        });
-    }, 2400);
 }
 
 // ---------------------------------------------------------------
@@ -210,32 +198,6 @@ if (scene && rig && !reduceMotion) {
 }
 
 // ---------------------------------------------------------------
-// Live activity feed in the hero mock-up
-// ---------------------------------------------------------------
-const feed = document.querySelector('[data-feed]');
-if (feed && !reduceMotion) {
-    const events = [
-        ['in', 'IN', 'Goods receipt · 180 crates · Chamber C'],
-        ['bill', 'BILL', 'Bill from stock · Rs 18,200 posted'],
-        ['out', 'OUT', 'Return · 35 bags · Chamber A'],
-        ['bill', 'PAID', 'Payment received · cash in hand'],
-        ['in', 'IN', 'Goods receipt · 420 bags · Chamber D'],
-        ['out', 'MOVE', 'Transfer · 50 bags · A → B'],
-    ];
-    let index = 0;
-    window.setInterval(() => {
-        if (document.hidden) return;
-        const [kind, label, text] = events[index++ % events.length];
-        const row = document.createElement('p');
-        row.className = 'is-new';
-        row.innerHTML = `<span class="cs-tag cs-tag-${kind}">${label}</span> ${text}`;
-        feed.prepend(row);
-        const rows = feed.querySelectorAll('p');
-        if (rows.length > 3) rows[rows.length - 1].remove();
-    }, 3200);
-}
-
-// ---------------------------------------------------------------
 // Card spotlight follows the cursor
 // ---------------------------------------------------------------
 document.querySelectorAll('.cs-card').forEach((card) => {
@@ -334,3 +296,17 @@ if (toast) {
     toast.querySelector('[data-toast-close]')?.addEventListener('click', hide);
     window.setTimeout(hide, 9000);
 }
+
+// ---------------------------------------------------------------
+// Light / dark toggle (initial theme is set by an inline script in <head>)
+// ---------------------------------------------------------------
+document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
+    const sync = () => button.setAttribute('aria-pressed', String(document.documentElement.dataset.theme === 'dark'));
+    sync();
+    button.addEventListener('click', () => {
+        const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.dataset.theme = next;
+        try { localStorage.setItem('cs-theme', next); } catch (e) { /* private mode: still switches for this page */ }
+        document.querySelectorAll('[data-theme-toggle]').forEach((b) => b.setAttribute('aria-pressed', String(next === 'dark')));
+    });
+});

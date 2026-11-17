@@ -12,6 +12,7 @@ use App\Support\DomainConfig;
 use App\Support\ProductStockAvailability;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Middleware\SetMarketingLocale;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -21,7 +22,7 @@ Route::get('/', function () {
     }
 
     return view('landing');
-})->name('landing');
+})->middleware(SetMarketingLocale::class)->name('landing');
 
 Route::get('/how-it-works', function () {
     if (DomainConfig::splitEnabled() && DomainConfig::isAppHost(request()->getHost())) {
@@ -29,7 +30,7 @@ Route::get('/how-it-works', function () {
     }
 
     return view('how-it-works');
-})->name('how-it-works');
+})->middleware(SetMarketingLocale::class)->name('how-it-works');
 
 Route::get('/demo/login', DemoAccountController::class)->name('demo.login');
 Route::get('/demo/exit', DemoExitController::class)->name('demo.exit');

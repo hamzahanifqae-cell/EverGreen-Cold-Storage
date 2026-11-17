@@ -39,11 +39,11 @@ class DomainSplitTest extends TestCase
     {
         $this->get('http://evergreencold.store/')
             ->assertOk()
-            ->assertSee('Cold Storage CRM');
+            ->assertSee('EverGreen Cold Storage');
 
         $this->get('http://evergreencold.store/how-it-works')
             ->assertOk()
-            ->assertSee('How Cold Storage CRM');
+            ->assertSee('How EverGreen Cold Storage');
     }
 
     public function test_apex_redirects_crm_paths_to_app_host(): void

@@ -18,7 +18,7 @@
     ]
   },
   "resources/css/home.css": {
-    "file": "assets/home-Che1BpCQ.css",
+    "file": "assets/home-D06uyu7k.css",
     "src": "resources/css/home.css",
     "isEntry": true,
     "name": "home",
@@ -42,7 +42,7 @@
     "isEntry": true
   },
   "resources/js/home.js": {
-    "file": "assets/home-Rm423BuW.js",
+    "file": "assets/home-CeKhrWML.js",
     "name": "home",
     "src": "resources/js/home.js",
     "isEntry": true

@@ -27,7 +27,7 @@
         @endfor
         <div class="cs-room-tag">
             <strong>{{ $tag ?? 'Chamber A' }}</strong>
-            <span>{{ $detail ?? '-18.0°C · 86% full' }}</span>
+            <span>{{ $detail ?? '86% full · 1,240 bags' }}</span>
         </div>
     </div>
 </div>
