@@ -310,3 +310,20 @@ document.querySelectorAll('[data-theme-toggle]').forEach((button) => {
         document.querySelectorAll('[data-theme-toggle]').forEach((b) => b.setAttribute('aria-pressed', String(next === 'dark')));
     });
 });
+
+// ---------------------------------------------------------------
+// Locations map: Leaflet is only downloaded when the map is on the page
+// and about to scroll into view.
+// ---------------------------------------------------------------
+const mapEl = document.querySelector('[data-map]');
+if (mapEl) {
+    const load = () => import('./locations-map.js').then(({ mountLocationsMap }) => mountLocationsMap(mapEl));
+    if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+            if (entries.some((e) => e.isIntersecting)) { io.disconnect(); load(); }
+        }, { rootMargin: '400px 0px' });
+        io.observe(mapEl);
+    } else {
+        load();
+    }
+}

@@ -322,7 +322,7 @@ body.cs-body {
 .cs-ticker-track span::after { content: "❄"; opacity: 0.6; margin-right: -28px; }
 @keyframes cs-marquee { to { transform: translateX(-50%); } }
 
-.cs-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 32px; padding: 40px 0 26px; font-size: 15px; }
+.cs-footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.3fr; gap: 32px; padding: 40px 0 26px; font-size: 15px; }
 .cs-footer-grid > div > p { margin-top: 12px; max-width: 320px; }
 .cs-footer h4 { color: #fff; font-size: 15px; margin-bottom: 10px; }
 .cs-footer-grid > div:not(:first-child) { display: flex; flex-direction: column; gap: 7px; }
@@ -1349,4 +1349,74 @@ body.cs-body {
 @media (max-width: 360px) {
     .cs-nav-actions .cs-btn { padding: 7px 11px; font-size: 13px; }
     .cs-actions .cs-btn-lg { padding: 11px 10px; font-size: 13.5px; }
+}
+
+/* =========================================================
+   Our locations: unit cards + map
+   ========================================================= */
+.cs-btn-outline { background: transparent; color: var(--cs-blue) !important; border: 1.5px solid var(--cs-blue); }
+.cs-btn-outline:hover { background: var(--cs-blue); color: #fff !important; }
+
+.cs-locations { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 28px; align-items: stretch; }
+.cs-location-list { display: grid; gap: 18px; align-content: start; }
+.cs-location {
+    background: var(--cs-surface); border: 1px solid var(--cs-line); border-radius: var(--cs-radius);
+    padding: 24px; transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+.cs-location:hover { border-color: rgba(16, 185, 129, 0.5); box-shadow: var(--cs-shadow); }
+.cs-location-top { display: flex; align-items: center; gap: 14px; }
+.cs-location-top h3 { font-size: 19px; }
+.cs-location-top .cs-card-tag { margin: 0 !important; }
+.cs-location-pin {
+    flex: none; display: grid; place-items: center; width: 42px; height: 42px; border-radius: 50% 50% 50% 6px;
+    transform: rotate(-45deg); background: linear-gradient(135deg, var(--cs-sky), var(--cs-blue));
+    box-shadow: 0 8px 16px -8px rgba(15, 118, 110, 0.7);
+    color: #fff; font-family: var(--cs-display); font-weight: 700; font-size: 16px;
+}
+.cs-location-info { display: grid; gap: 10px; margin-top: 18px !important; padding-top: 16px !important; border-top: 1px dashed var(--cs-line); }
+.cs-location-info li { display: flex; align-items: center; gap: 12px; color: var(--cs-muted); font-size: 15px; }
+.cs-location-info .cs-ico { width: 34px; height: 34px; border-radius: 10px; }
+.cs-location-info .cs-ico svg { width: 17px; height: 17px; }
+.cs-location-info a { color: var(--cs-heading); font-weight: 600; font-variant-numeric: tabular-nums; }
+.cs-location-info a:hover { color: var(--cs-blue); }
+.cs-location-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 18px; }
+.cs-location-actions .cs-btn { padding: 10px 18px; font-size: 14.5px; }
+.cs-location-show {
+    background: none; border: 0; padding: 8px 4px; cursor: pointer;
+    font: inherit; font-size: 14px; font-weight: 600; color: var(--cs-blue);
+    text-decoration: underline; text-underline-offset: 3px;
+}
+
+.cs-map-wrap { position: relative; min-height: 460px; border-radius: var(--cs-radius); overflow: hidden; border: 1px solid var(--cs-line); box-shadow: var(--cs-shadow); background: var(--cs-ice); }
+.cs-map { position: absolute; inset: 0; z-index: 0; }
+.cs-map .leaflet-control-attribution { font-size: 10.5px; }
+
+/* Numbered teal pins */
+.cs-map-pin { background: none; border: 0; }
+.cs-map-pin span {
+    display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50% 50% 50% 4px;
+    transform: rotate(-45deg); background: linear-gradient(135deg, #10b981, #0f766e);
+    border: 3px solid #fff; box-shadow: 0 10px 18px -6px rgba(6, 17, 15, 0.6);
+    color: #fff; font: 700 15px/1 "Sora", "Segoe UI", system-ui, sans-serif;
+}
+.cs-map-pin b, .cs-location-pin b { display: block; transform: rotate(45deg); font-weight: 700; } /* keep numbers upright */
+.cs-map-popup { display: grid; gap: 4px; min-width: 190px; font: 13.5px/1.45 "Inter", "Segoe UI", system-ui, sans-serif; color: #0b1a17; }
+.cs-map-popup strong { font: 600 14.5px/1.3 "Sora", "Segoe UI", system-ui, sans-serif; }
+.cs-map-popup span { color: #5b6b66; }
+.cs-map-popup a { color: #0f766e; font-weight: 600; }
+.cs-map-popup-dir { margin-top: 4px; }
+.cs-map .leaflet-popup-content-wrapper { border-radius: 14px; }
+
+/* Dark mode: dim the map tiles to match */
+[data-theme="dark"] .cs-map .leaflet-tile-pane { filter: brightness(0.7) contrast(1.15) saturate(0.8) hue-rotate(-10deg); }
+
+@media (max-width: 960px) {
+    .cs-locations { grid-template-columns: 1fr; }
+    .cs-map-wrap { min-height: 380px; order: -1; }
+}
+@media (max-width: 640px) {
+    .cs-location { padding: 20px; }
+    .cs-map-wrap { min-height: 320px; }
+    .cs-location-actions .cs-btn { flex: 1 1 0; min-width: 0; padding: 10px 12px; font-size: 14px; white-space: nowrap; }
+    .cs-location-show { flex: 1 1 100%; text-align: start; }
 }

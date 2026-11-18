@@ -1,9 +1,10 @@
 {{-- Shared shell for the marketing pages (home + how it works). --}}
 @php
     $isUrdu = app()->getLocale() === 'ur';
-    // "Contact us" calls the number once CONTACT_PHONE is set; until then it scrolls to the footer.
+    // "Contact us" calls CONTACT_PHONE if it is set; otherwise it opens the "Our locations"
+    // section, which lists both units with their phone numbers and a map.
     $contactPhone = (string) config('branding.contact_phone');
-    $contactHref = $contactPhone !== '' ? 'tel:'.preg_replace('/[^\d+]/', '', $contactPhone) : '#contact';
+    $contactHref = $contactPhone !== '' ? 'tel:'.preg_replace('/[^\d+]/', '', $contactPhone) : route('landing').'#locations';
 @endphp
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}" dir="{{ $isUrdu ? 'rtl' : 'ltr' }}">
@@ -119,6 +120,13 @@
         <div>
             <h4>{{ __('Learn more') }}</h4>
             <a href="{{ route('how-it-works') }}">{{ __('How it works') }}</a>
+        </div>
+        <div>
+            <h4>{{ __('Contact') }}</h4>
+            @foreach (config('branding.locations', []) as $loc)
+                <a href="tel:+92{{ ltrim(preg_replace('/\D/', '', $loc['phone']), '0') }}">{{ __($loc['unit']) }} · <span dir="ltr">{{ $loc['phone'] }}</span></a>
+            @endforeach
+            <a href="{{ route('landing') }}#locations">{{ __('Our locations') }}</a>
         </div>
     </div>
     <div class="cs-shell cs-footer-bottom">

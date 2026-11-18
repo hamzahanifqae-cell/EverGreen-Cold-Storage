@@ -24,6 +24,35 @@ return [
     */
     'contact_phone' => env('CONTACT_PHONE'),
 
+    /*
+    | Cold storage units shown on the landing page ("Our locations" + map).
+    | Coordinates are decoded from the client's Google Maps plus codes.
+    */
+    'locations' => [
+        [
+            'unit' => 'Unit 1',
+            'name' => 'EverGreen Cold Storage',
+            'address' => 'Gehlan Bypass, Allahabad',
+            'contact_role' => 'Manager',
+            'contact_name' => 'Zafar Iqbal',
+            'phone' => '0323 4911555',
+            'plus_code' => 'V2GQ+X6J Allahabad',
+            'lat' => 30.877463,
+            'lng' => 74.038016,
+        ],
+        [
+            'unit' => 'Unit 2',
+            'name' => 'EverGreen Cold Storage',
+            'address' => 'Bhana Sahiba, Tehsil Depalpur, District Okara',
+            'contact_role' => 'Manager',
+            'contact_name' => 'Ghulam Murtaza',
+            'phone' => '0322 4422211',
+            'plus_code' => 'M3XF+RQP Maujoke',
+            'lat' => 30.699587,
+            'lng' => 74.074453,
+        ],
+    ],
+
     'legacy_merchant_email' => 'info@zgngreenpvt.com',
 
     'colors' => [

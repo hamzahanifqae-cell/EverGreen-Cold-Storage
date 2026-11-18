@@ -6,15 +6,32 @@ use Tests\TestCase;
 
 class ContactButtonTest extends TestCase
 {
-    public function test_contact_button_scrolls_to_the_footer_until_a_number_is_set(): void
+    public function test_contact_button_opens_our_locations_when_no_single_number_is_set(): void
     {
         config(['branding.contact_phone' => null]);
 
+        foreach (['landing', 'how-it-works'] as $page) {
+            $this->get(route($page))
+                ->assertOk()
+                ->assertSee('Contact us')
+                ->assertSee('href="'.route('landing').'#locations"', false);
+        }
+    }
+
+    public function test_landing_page_lists_both_units_with_tap_to_call_numbers_and_a_map(): void
+    {
         $this->get(route('landing'))
             ->assertOk()
-            ->assertSee('Contact us')
-            ->assertSee('href="#contact"', false)
-            ->assertSee('id="contact"', false);
+            ->assertSee('id="locations"', false)
+            ->assertSee('Zafar Iqbal')
+            ->assertSee('Gehlan Bypass, Allahabad')
+            ->assertSee('href="tel:+923234911555"', false)
+            ->assertSee('Ghulam Murtaza')
+            ->assertSee('Bhana Sahiba, Tehsil Depalpur, District Okara')
+            ->assertSee('href="tel:+923224422211"', false)
+            ->assertSee('data-map', false)
+            ->assertSee('30.877463', false)
+            ->assertSee('30.699587', false);
     }
 
     public function test_contact_button_calls_the_configured_number(): void

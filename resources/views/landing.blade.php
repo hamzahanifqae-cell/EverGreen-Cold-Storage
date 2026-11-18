@@ -145,8 +145,68 @@
         </div>
     </section>
 
+    {{-- Locations + map --}}
+    <section class="cs-section cs-section-tint" id="locations">
+        <div class="cs-shell">
+            <div class="cs-head" data-reveal>
+                <p class="cs-eyebrow">{{ __('Our locations') }}</p>
+                <h2>{{ __('Two cold storage units near you.') }}</h2>
+                <p>{{ __('Call us or get directions to the unit closest to you.') }}</p>
+            </div>
+            @php
+                // Phone numbers like "0323 4911555" become "+923234911555" for tap-to-call links.
+                $units = collect(config('branding.locations', []))->values()->map(fn (array $l) => $l + [
+                    'tel' => '+92'.ltrim(preg_replace('/\D/', '', $l['phone']), '0'),
+                    'directions' => 'https://www.google.com/maps/dir/?api=1&destination='.$l['lat'].','.$l['lng'],
+                ]);
+                $mapPins = $units->map(fn (array $l, int $i) => [
+                    'n' => $i + 1,
+                    'lat' => $l['lat'],
+                    'lng' => $l['lng'],
+                    'title' => $l['name'].' — '.__($l['unit']),
+                    'address' => __($l['address']),
+                    'contact' => __($l['contact_role']).': '.__($l['contact_name']),
+                    'phone' => $l['phone'],
+                    'tel' => $l['tel'],
+                    'directions' => $l['directions'],
+                    'directionsLabel' => __('Get directions'),
+                ])->all();
+            @endphp
+            <div class="cs-locations">
+                <div class="cs-location-list">
+                    @foreach ($units as $i => $loc)
+                        <article class="cs-location" data-reveal data-location="{{ $i }}">
+                            <div class="cs-location-top">
+                                <span class="cs-location-pin" aria-hidden="true"><b>{{ $i + 1 }}</b></span>
+                                <div>
+                                    <p class="cs-card-tag">{{ __($loc['unit']) }}</p>
+                                    <h3>{{ $loc['name'] }}</h3>
+                                </div>
+                            </div>
+                            <ul class="cs-location-info">
+                                <li><span class="cs-ico">@include('landing.icon', ['name' => 'pin'])</span>{{ __($loc['address']) }}</li>
+                                <li><span class="cs-ico">@include('landing.icon', ['name' => 'user'])</span>{{ __($loc['contact_role']) }}: {{ __($loc['contact_name']) }}</li>
+                                <li><span class="cs-ico">@include('landing.icon', ['name' => 'phone'])</span><a href="tel:{{ $loc['tel'] }}" dir="ltr">{{ $loc['phone'] }}</a></li>
+                            </ul>
+                            <div class="cs-location-actions">
+                                <a class="cs-btn cs-btn-primary" href="tel:{{ $loc['tel'] }}">{{ __('Call now') }}</a>
+                                <a class="cs-btn cs-btn-outline" href="{{ $loc['directions'] }}" target="_blank" rel="noopener">{{ __('Get directions') }}</a>
+                                <button class="cs-location-show" type="button" data-show-on-map="{{ $i }}">{{ __('Show on map') }}</button>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+                <div class="cs-map-wrap" data-reveal>
+                    {{-- Leaflet map (OpenStreetMap); pins come from config/branding.php → locations --}}
+                    <div class="cs-map" data-map data-locations="{{ json_encode($mapPins) }}"
+                         role="region" aria-label="{{ __('Map of our cold storage units') }}"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     {{-- FAQ --}}
-    <section class="cs-section cs-section-tint" id="faq">
+    <section class="cs-section" id="faq">
         <div class="cs-shell cs-faq">
             <div data-reveal>
                 <p class="cs-eyebrow">{{ __('FAQ') }}</p>

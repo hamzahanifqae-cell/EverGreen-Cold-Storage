@@ -1,4 +1,16 @@
 {
+  "node_modules/leaflet/dist/images/layers-2x.png": {
+    "file": "assets/layers-2x-Bpkbi35X.png",
+    "src": "node_modules/leaflet/dist/images/layers-2x.png"
+  },
+  "node_modules/leaflet/dist/images/layers.png": {
+    "file": "assets/layers-BWBAp2CZ.png",
+    "src": "node_modules/leaflet/dist/images/layers.png"
+  },
+  "node_modules/leaflet/dist/images/marker-icon.png": {
+    "file": "assets/marker-icon-hN30_KVU.png",
+    "src": "node_modules/leaflet/dist/images/marker-icon.png"
+  },
   "resources/css/app.css": {
     "file": "assets/app-CNpJlIry.css",
     "src": "resources/css/app.css",
@@ -18,7 +30,7 @@
     ]
   },
   "resources/css/home.css": {
-    "file": "assets/home-D06uyu7k.css",
+    "file": "assets/home-sGxEyBgx.css",
     "src": "resources/css/home.css",
     "isEntry": true,
     "name": "home",
@@ -42,15 +54,32 @@
     "isEntry": true
   },
   "resources/js/home.js": {
-    "file": "assets/home-CeKhrWML.js",
+    "file": "assets/home-QnR8_ZIs.js",
     "name": "home",
     "src": "resources/js/home.js",
-    "isEntry": true
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/locations-map.js"
+    ]
   },
   "resources/js/landing.js": {
     "file": "assets/landing-Bc-iQpkr.js",
     "name": "landing",
     "src": "resources/js/landing.js",
     "isEntry": true
+  },
+  "resources/js/locations-map.js": {
+    "file": "assets/locations-map-Dl97XGF_.js",
+    "name": "locations-map",
+    "src": "resources/js/locations-map.js",
+    "isDynamicEntry": true,
+    "css": [
+      "assets/locations-map-CLLlcC51.css"
+    ],
+    "assets": [
+      "assets/layers-BWBAp2CZ.png",
+      "assets/layers-2x-Bpkbi35X.png",
+      "assets/marker-icon-hN30_KVU.png"
+    ]
   }
 }
