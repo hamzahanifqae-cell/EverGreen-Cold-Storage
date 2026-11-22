@@ -2,26 +2,26 @@
 
 namespace App\Models;
 
-use OwenIt\Auditing\Contracts\Auditable;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
+use OwenIt\Auditing\Contracts\Auditable;
 
 class PermissionModule extends Model implements Auditable
 {
-    use \OwenIt\Auditing\Auditable;
     use HasUuids;
+    use \OwenIt\Auditing\Auditable;
 
     protected $fillable = [
         'id',
         'module',
         'label',
-//        'is_enabled',
+        //        'is_enabled',
     ];
 
     public $incrementing = false;
-    protected $keyType = 'string';
 
+    protected $keyType = 'string';
 
     public function merchants()
     {
@@ -40,40 +40,38 @@ class PermissionModule extends Model implements Auditable
             ->exists();
     }
 
-
     public static function enabledForCurrentMerchant(): array
     {
         $user = Filament::auth()->user();
 
-        // Merchant panel
-        if ($user instanceof \App\Models\Merchant) {
-            return $user->permissionModuleNames();
+        // Merchant owner: full catalog (same idea as Merchant::hasPermissionTo always true).
+        if ($user instanceof Merchant) {
+            return self::query()->orderBy('label')->pluck('module')->all();
         }
 
-        // Staff panel → inherit from merchant
-        if ($user instanceof \App\Models\User && $user->merchant) {
+        // Staff panel → inherit from merchant's enabled modules
+        if ($user instanceof User && $user->merchant) {
             return $user->merchant->permissionModuleNames();
         }
 
         return [];
     }
 
-
     public static function isEnabledForCurrentMerchant(string $module): bool
     {
         $user = Filament::auth()->user();
 
-        // ✅ Merchant owns modules (list is loaded once per request)
-        if ($user instanceof \App\Models\Merchant) {
-            return $user->hasPermissionModule($module);
+        // Merchant owner always has full module access; the pivot only
+        // gates what staff under that merchant can see.
+        if ($user instanceof Merchant) {
+            return true;
         }
 
-        // ✅ Staff inherits from merchant
-        if ($user instanceof \App\Models\User) {
+        // Staff inherits from merchant
+        if ($user instanceof User) {
             return $user->merchant?->hasPermissionModule($module) ?? false;
         }
 
         return false;
     }
 }
-

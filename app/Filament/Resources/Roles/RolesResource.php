@@ -36,6 +36,12 @@ class RolesResource extends Resource
 
     protected static ?int $navigationSort = 4;
 
+    protected static ?string $navigationLabel = 'Roles';
+
+    protected static ?string $modelLabel = 'Role';
+
+    protected static ?string $pluralModelLabel = 'Roles';
+
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function canViewAny(): bool

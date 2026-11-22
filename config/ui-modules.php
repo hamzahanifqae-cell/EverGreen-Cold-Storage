@@ -69,7 +69,7 @@ return [
 
         // Extra configuration
         'merchant_settings' => false,
-        'permission_modules' => true,
+        'permission_modules' => false,
         'notification_templates' => false,
         'invoice_dynamic_fields' => false,
     ],
