@@ -1,0 +1,35 @@
+{
+    "id": "/merchant",
+    "name": "EverGreen Cold Storage",
+    "short_name": "EverGreen",
+    "description": "EverGreen Cold Storage CRM: goods receipts, returns, storage bills and payments.",
+    "start_url": "/merchant",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#0b0f14",
+    "theme_color": "#0f766e",
+    "lang": "en",
+    "dir": "ltr",
+    "categories": ["business", "productivity"],
+    "icons": [
+        { "src": "/images/pwa/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+        { "src": "/images/pwa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+        { "src": "/images/pwa/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+        { "src": "/images/pwa/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ],
+    "shortcuts": [
+        {
+            "name": "Merchant panel",
+            "short_name": "Merchant",
+            "url": "/merchant",
+            "icons": [{ "src": "/images/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+        },
+        {
+            "name": "Staff panel",
+            "short_name": "Staff",
+            "url": "/staff",
+            "icons": [{ "src": "/images/pwa/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+        }
+    ]
+}

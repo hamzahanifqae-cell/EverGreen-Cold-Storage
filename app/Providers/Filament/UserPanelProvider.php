@@ -88,6 +88,11 @@ class UserPanelProvider extends PanelProvider
                 Authenticate::class,
             ])
 
+            // Installable app: manifest, theme colour and service worker
+            ->renderHook(
+                'panels::head.end',
+                fn () => view('filament.pwa-head')
+            )
             ->renderHook(
                 'panels::head.end',
                 function () {

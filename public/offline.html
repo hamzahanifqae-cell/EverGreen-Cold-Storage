@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f766e">
+    <title>Offline · EverGreen Cold Storage</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <style>
+        :root { color-scheme: dark; }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px;
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif; color: #e3efea; text-align: center;
+            background: radial-gradient(600px 400px at 50% 30%, rgba(16, 185, 129, 0.22), transparent 70%), #0b0f14;
+        }
+        main { max-width: 360px; }
+        .logo { display: block; margin: 0 auto; filter: drop-shadow(0 18px 24px rgba(16, 185, 129, 0.45)); }
+        h1 { margin: 22px 0 8px; font-size: 22px; }
+        p { margin: 0; color: #9fb5ad; line-height: 1.55; }
+        .ur { margin-top: 10px; direction: rtl; font-size: 17px; }
+        button {
+            margin-top: 26px; padding: 13px 28px; border: 0; border-radius: 999px; cursor: pointer;
+            background: #0f766e; color: #fff; font: 600 15px system-ui, sans-serif;
+        }
+        button:active { transform: scale(0.97); }
+    </style>
+</head>
+<body>
+<main>
+    <svg class="logo" width="88" height="88" aria-label="EverGreen Cold Storage" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img">
+      <defs>
+        <linearGradient id="eg-bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#34d399"/>
+          <stop offset="0.5" stop-color="#0f766e"/>
+          <stop offset="1" stop-color="#053b36"/>
+        </linearGradient>
+        <radialGradient id="eg-shine" cx="0.3" cy="0.2" r="0.7">
+          <stop offset="0" stop-color="#ffffff" stop-opacity="0.32"/>
+          <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <rect width="64" height="64" rx="15" fill="url(#eg-bg)"/>
+      <rect width="64" height="64" rx="15" fill="url(#eg-shine)"/>
+      <g fill="none" stroke="#ffffff" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round">
+        <g id="arm"><path d="M30 30V10M24.5 14.5 30 20l5.5-5.5"/></g>
+        <use href="#arm" transform="rotate(60 30 30)"/>
+        <use href="#arm" transform="rotate(120 30 30)"/>
+        <use href="#arm" transform="rotate(180 30 30)"/>
+        <use href="#arm" transform="rotate(240 30 30)"/>
+        <use href="#arm" transform="rotate(300 30 30)"/>
+      </g>
+      <circle cx="30" cy="30" r="4" fill="#ffffff"/>
+      <path d="M53 53c-11 1.5-17-4-15.5-14 9.5-2 16.5 3 15.5 14z" fill="#d1fae5" stroke="#053b36" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M51.5 51.5 41 41" stroke="#0f766e" stroke-width="2.2" stroke-linecap="round"/>
+    </svg>
+    <h1>You're offline</h1>
+    <p>Check your internet connection, then try again. Everything you saved is safe.</p>
+    <p class="ur">انٹرنیٹ کنکشن چیک کریں اور دوبارہ کوشش کریں۔</p>
+    <button type="button" onclick="location.reload()">Try again</button>
+</main>
+<script>
+    // Reload automatically as soon as the connection comes back.
+    window.addEventListener('online', () => location.reload());
+</script>
+</body>
+</html>

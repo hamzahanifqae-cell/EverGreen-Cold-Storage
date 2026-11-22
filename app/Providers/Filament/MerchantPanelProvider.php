@@ -88,6 +88,11 @@ class MerchantPanelProvider extends PanelProvider
             ])
 
             ->viteTheme('resources/css/filament/merchant/theme.css')
+            // Installable app: manifest, theme colour and service worker
+            ->renderHook(
+                'panels::head.end',
+                fn () => view('filament.pwa-head')
+            )
             ->renderHook(
                 'panels::head.end',
                 function () {
