@@ -16,8 +16,11 @@ class InstallableAppTest extends TestCase
                 ->assertOk()
                 ->assertSee('rel="manifest"', false)
                 ->assertSee('manifest.json', false)
-                ->assertSee("serviceWorker.register(", false)
-                ->assertSee('name="theme-color" content="#0f766e"', false);
+                ->assertSee('serviceWorker.register(', false)
+                ->assertSee('name="theme-color" content="#0f766e"', false)
+                // Our own "Install app" banner, since Chrome's popup only appears once per phone
+                ->assertSee('data-eg-install', false)
+                ->assertSee('beforeinstallprompt', false);
         }
     }
 

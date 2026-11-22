@@ -93,6 +93,11 @@ class MerchantPanelProvider extends PanelProvider
                 'panels::head.end',
                 fn () => view('filament.pwa-head')
             )
+            // "Install app" banner (one-tap install, or manual steps when the browser won't offer it)
+            ->renderHook(
+                'panels::body.end',
+                fn () => view('filament.pwa-install')
+            )
             ->renderHook(
                 'panels::head.end',
                 function () {
