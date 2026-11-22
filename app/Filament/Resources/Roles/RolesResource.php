@@ -11,6 +11,7 @@ use App\Filament\Resources\Roles\Tables\RolesTable;
 use App\Models\PermissionModule;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\UiModules;
 use BackedEnum;
 use Filament\Facades\Filament;
 use Filament\Resources\Resource;
@@ -90,16 +91,16 @@ class RolesResource extends Resource
 
     public static function getAssignablePermissionMatrix(): array
     {
-        $enabledModules = PermissionModule::enabledForCurrentMerchant();
         $actions = ['view', 'create', 'update', 'delete'];
         $user = Filament::auth()->user();
         $guard = Filament::getCurrentPanel()->getAuthGuard();
+        $modules = UiModules::staffAssignablePermissionModules();
 
         // Staff can only assign permissions they already have.
         if ($user instanceof User) {
             $matrix = [];
 
-            foreach ($enabledModules as $module) {
+            foreach ($modules as $module) {
                 $allowedActions = [];
 
                 foreach ($actions as $action) {
@@ -108,7 +109,7 @@ class RolesResource extends Resource
                     }
                 }
 
-                if (! empty($allowedActions)) {
+                if ($allowedActions !== []) {
                     $matrix[$module] = $allowedActions;
                 }
             }
@@ -116,8 +117,8 @@ class RolesResource extends Resource
             return $matrix;
         }
 
-        // Merchant/Admin can assign all enabled module actions.
-        return collect($enabledModules)
+        // Merchant owner can grant any action for UI-enabled modules (incl. Products & Customers).
+        return collect($modules)
             ->mapWithKeys(fn (string $module) => [$module => $actions])
             ->toArray();
     }

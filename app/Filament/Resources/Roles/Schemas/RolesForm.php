@@ -35,9 +35,7 @@ class RolesForm
                                 $livewire->resetErrorBag('data.name');
                             }),
 
-
-
-        ])
+                    ])
                     ->columns(1),
 
                 Section::make('Permissions')
@@ -68,9 +66,18 @@ class RolesForm
     {
         $assignable = RolesResource::getAssignablePermissionMatrix();
 
-        // 🔹 DISPLAY-ONLY ALIASES (NO FUNCTIONAL IMPACT)
+        // Display-only labels (permission keys stay the same).
         $moduleAliases = [
             'users' => 'Staff',
+            'customers' => 'Customers',
+            'products' => 'Products',
+            'cold_storage' => 'Cold storage',
+            'roles_permissions' => 'Roles',
+            'businesses' => 'Businesses',
+            'branches' => 'Branches',
+            'merchants' => 'Merchants',
+            'categories' => 'Categories',
+            'dashboard' => 'Dashboard',
         ];
 
         $rows = [];
@@ -96,12 +103,10 @@ class RolesForm
                         ->dehydrated(false),
 
                     // ✅ Action checkboxes
-                    ...collect($actions)->map(fn ($action) =>
-                    Checkbox::make("{$module}.{$action}")
+                    ...collect($actions)->map(fn ($action) => Checkbox::make("{$module}.{$action}")
                         ->label(ucfirst($action))
                         ->default(false)
-                        ->disabled(fn (callable $get) =>
-                        ! $get("{$module}.enabled")
+                        ->disabled(fn (callable $get) => ! $get("{$module}.enabled")
                         )
                     )->toArray(),
                 ])
@@ -110,7 +115,4 @@ class RolesForm
 
         return $rows;
     }
-
-
-
 }

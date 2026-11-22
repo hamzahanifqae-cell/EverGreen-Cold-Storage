@@ -86,4 +86,36 @@ class UiModules
 
         return false;
     }
+
+    /**
+     * Permission-module keys a merchant can grant to staff on the Roles form.
+     * Driven by config/ui-modules.php so hidden CRM features stay off the checklist.
+     *
+     * @return list<string>
+     */
+    public static function staffAssignablePermissionModules(): array
+    {
+        $map = [
+            'dashboard' => 'dashboard',
+            'staff' => 'users',
+            'roles' => 'roles_permissions',
+            'merchants' => 'merchants',
+            'businesses' => 'businesses',
+            'branches' => 'branches',
+            'customers' => 'customers',
+            'products' => 'products',
+            'categories' => 'categories',
+            'cold_storage' => 'cold_storage',
+        ];
+
+        $modules = [];
+
+        foreach ($map as $uiKey => $permissionModule) {
+            if (self::enabled($uiKey)) {
+                $modules[] = $permissionModule;
+            }
+        }
+
+        return array_values(array_unique($modules));
+    }
 }

@@ -3,11 +3,13 @@
 namespace App\Filament\Resources\Roles\Pages;
 
 use App\Filament\Resources\Roles\RolesResource;
-use App\Models\PermissionModule;
+use App\Support\UiModules;
 use Filament\Actions\DeleteAction;
 use Filament\Facades\Filament;
 use Filament\Resources\Pages\EditRecord;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class EditRoles extends EditRecord
 {
@@ -17,9 +19,8 @@ class EditRoles extends EditRecord
     {
         $name = (string) ($this->record?->name ?? '');
 
-        return 'Edit ' . \Illuminate\Support\Str::limit($name, 30);
+        return 'Edit '.Str::limit($name, 30);
     }
-
 
     protected function getHeaderActions(): array
     {
@@ -29,14 +30,15 @@ class EditRoles extends EditRecord
                 ->visible(fn () => auth(Filament::getCurrentPanel()->getAuthGuard())->user()?->hasPermissionTo('roles_permissions.delete', Filament::getCurrentPanel()->getAuthGuard())),
         ];
     }
-    protected function resolveRecord($key): \Illuminate\Database\Eloquent\Model
+
+    protected function resolveRecord($key): Model
     {
         return static::getResource()::getEloquentQuery()->with('permissions')->findOrFail($key);
     }
 
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        $enabledModules = PermissionModule::enabledForCurrentMerchant();
+        $enabledModules = UiModules::staffAssignablePermissionModules();
 
         $permissions = $this->record->permissions
             ->pluck('name')
@@ -44,7 +46,7 @@ class EditRoles extends EditRecord
 
         $permissionsData = [];
 
-        // Initialize all modules
+        // Initialize all modules shown on the Roles form (Products, Customers, Cold storage, …)
         foreach ($enabledModules as $module) {
             $permissionsData[$module] = [
                 'enabled' => false,
@@ -70,7 +72,6 @@ class EditRoles extends EditRecord
         return $data;
     }
 
-
     public static function getPermissionModules(): array
     {
         return [
@@ -83,17 +84,17 @@ class EditRoles extends EditRecord
             'merchant_settings' => 'Merchant Settings',
             'businesses' => 'Businesses',
             'orders' => 'Orders',
-            'branches'=>'Branches',
+            'branches' => 'Branches',
             'categories' => 'Categories',
             'customers' => 'Customers',
             'audits' => 'Audits',
         ];
     }
+
     protected function handleRecordUpdate(
-        \Illuminate\Database\Eloquent\Model $record,
+        Model $record,
         array $data
-    ): \Illuminate\Database\Eloquent\Model
-    {
+    ): Model {
         $permissions = $data['permissions'] ?? [];
         unset($data['permissions']);
 

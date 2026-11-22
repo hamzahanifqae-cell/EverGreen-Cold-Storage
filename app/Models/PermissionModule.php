@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\UiModules;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
@@ -67,8 +68,13 @@ class PermissionModule extends Model implements Auditable
             return true;
         }
 
-        // Staff inherits from merchant
+        // Staff: UI-enabled modules are gated by role permissions alone, so a
+        // merchant can grant Products/Customers from Roles without the pivot UI.
         if ($user instanceof User) {
+            if (in_array($module, UiModules::staffAssignablePermissionModules(), true)) {
+                return true;
+            }
+
             return $user->merchant?->hasPermissionModule($module) ?? false;
         }
 
