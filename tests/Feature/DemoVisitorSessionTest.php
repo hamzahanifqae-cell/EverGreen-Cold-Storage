@@ -74,6 +74,10 @@ class DemoVisitorSessionTest extends TestCase
 
     public function test_expired_visitor_cannot_start_demo_again(): void
     {
+        // Pin the clock to midday: between 17:00 and 17:40 the session below would have started
+        // before the daily demo reset (config demo.daily_reset_at), which correctly allows a fresh demo.
+        $this->travelTo(now()->setTime(12, 0));
+
         $createdSession = DemoVisitorSession::query()->create([
             'visitor_hash' => DemoAccount::visitorFingerprint(),
             'ip_address' => '127.0.0.1',

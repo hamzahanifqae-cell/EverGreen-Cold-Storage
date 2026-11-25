@@ -4,7 +4,8 @@
     Chrome's own install popup is unreliable: after one dismissal it stays hidden on that
     phone for ~3 months, and other browsers never show it. This banner gives a one-tap
     Install button whenever Chrome allows it, and step-by-step instructions otherwise.
-    Hidden when the CRM is already running as the installed app, or for 7 days after ✕.
+    Phones and tablets only (never on desktop). Never shown on a phone where the installed
+    app has been opened, and hidden for 7 days after ✕.
 --}}
 <div class="eg-install" data-eg-install hidden role="dialog" aria-live="polite" aria-label="Install the EverGreen app">
     <img src="{{ asset('images/pwa/icon-192.png') }}" alt="" width="44" height="44">
@@ -48,26 +49,34 @@
     (function () {
         var banner = document.querySelector('[data-eg-install]');
         if (!banner) return;
+
+        // Desktop browsers: never offer the app.
+        if (!window.egIsMobileDevice) return;
+
         var hint = banner.querySelector('[data-eg-install-hint]');
         var go = banner.querySelector('[data-eg-install-go]');
-        var KEY = 'eg-install-dismissed-at';
+        var SNOOZE_KEY = 'eg-install-dismissed-at';
+        var INSTALLED_KEY = 'eg-app-installed';
         var SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
         var deferred = null;
+        var ua = navigator.userAgent;
 
-        var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        if (standalone) return; // already running as the installed app
+        function read(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+        function write(key, value) { try { value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch (e) {} }
 
-        function snoozed() {
-            try { return Date.now() - Number(localStorage.getItem(KEY) || 0) < SNOOZE_MS; } catch (e) { return false; }
-        }
+        // Running as the installed app (head script also records this): nothing to offer.
+        if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) return;
+
+        function snoozed() { return Date.now() - Number(read(SNOOZE_KEY) || 0) < SNOOZE_MS; }
         function show() { if (!snoozed()) banner.hidden = false; }
         function hide() { banner.hidden = true; }
 
-        // Chrome / Edge / Samsung Internet: we can open the real install dialog ourselves.
+        // Chrome / Edge / Samsung Internet only fire this when the app is NOT installed on this phone,
+        // so it also clears an old "installed" note (e.g. the app was uninstalled since).
         window.addEventListener('beforeinstallprompt', function (event) {
             event.preventDefault();
             deferred = event;
-            hint.textContent = 'Open the CRM from your home screen, full screen.';
+            write(INSTALLED_KEY, null);
             go.hidden = false;
             show();
         });
@@ -79,31 +88,28 @@
         });
 
         banner.querySelector('[data-eg-install-close]').addEventListener('click', function () {
-            try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+            write(SNOOZE_KEY, String(Date.now()));
             hide();
         });
 
         window.addEventListener('appinstalled', function () {
-            try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {}
+            write(INSTALLED_KEY, '1');
             hide();
         });
 
-        // Browser didn't offer an install (dismissed earlier, cooldown, or another browser):
-        // show manual steps, unless this phone already has the app installed.
+        // No install offer from the browser: show manual steps, unless the app is already on this phone.
         window.addEventListener('load', function () {
             setTimeout(function () {
                 if (deferred || !banner.hidden) return;
-                var ua = navigator.userAgent;
-                var isAndroid = /Android/i.test(ua);
-                var isIOS = /iPhone|iPad|iPod/i.test(ua);
-                if (!isAndroid && !isIOS) return; // desktop: Chrome shows an install icon in the address bar
+                if (read(INSTALLED_KEY) === '1') return; // installed app has been opened on this phone
 
                 var checkInstalled = navigator.getInstalledRelatedApps
                     ? navigator.getInstalledRelatedApps().catch(function () { return []; })
                     : Promise.resolve([]);
 
                 checkInstalled.then(function (apps) {
-                    if (apps && apps.length) return; // already installed on this phone
+                    if (apps && apps.length) { write(INSTALLED_KEY, '1'); return; }
+                    var isIOS = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
                     hint.textContent = isIOS
                         ? 'Tap Share, then “Add to Home Screen”.'
                         : /SamsungBrowser/i.test(ua)

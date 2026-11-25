@@ -9,13 +9,19 @@ class InstallableAppTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_both_crm_panels_link_the_app_manifest_and_register_the_service_worker(): void
+    public function test_both_crm_panels_are_installable_on_phones_only(): void
     {
         foreach (['/merchant/login', '/staff/login'] as $url) {
             $this->get($url)
                 ->assertOk()
-                ->assertSee('rel="manifest"', false)
+                // No static manifest link: desktop browsers must not offer "Install app"
+                ->assertDontSee('<link rel="manifest"', false)
+                // The manifest is added by script on phones and tablets only
+                ->assertSee("link.rel = 'manifest'", false)
+                ->assertSee('if (!isMobile) return;', false)
                 ->assertSee('manifest.json', false)
+                // A phone that has opened the installed app is remembered, so the banner stays hidden there
+                ->assertSee("localStorage.setItem('eg-app-installed', '1')", false)
                 ->assertSee('serviceWorker.register(', false)
                 ->assertSee('name="theme-color" content="#0f766e"', false)
                 // Our own "Install app" banner, since Chrome's popup only appears once per phone
